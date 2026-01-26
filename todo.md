@@ -62,3 +62,11 @@
 - [x] Criar script de diagnóstico para testar diferentes métodos
 
 Solucao: O Apps Script valida apenas o token em query parameter. Headers de autenticação causavam erro 401. Teste 6 confirmou sucesso com payload estruturado.
+
+## Nova Feature: Captura de Câmera
+- [x] Criar componente CameraCapture.tsx com preview de câmera
+- [x] Adicionar botão para tirar foto e confirmar/descartar
+- [x] Integrar captura de câmera nos campos de foto do formulário
+- [x] Permitir alternar entre galeria e câmera
+- [x] Testar em navegadores desktop com webcam (funcionando)
+- [ ] Testar em dispositivos móveis (iOS/Android)

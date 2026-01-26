@@ -12,7 +12,8 @@ import { trpc } from '@/lib/trpc';
 import { generateRequestId, validateImageFile } from '@shared/utils';
 import { TIPOS_EQUIPE, TIPOS_SERVICO, SISTEMAS_AFETADOS, UNIDADES, URGENCIAS, MAX_FOTO_SIZE } from '@shared/constants';
 import type { Loja, MaterialItem } from '@shared/types';
-import { Plus, Trash2, Upload, CheckCircle } from 'lucide-react';
+import { Plus, Trash2, Upload, CheckCircle, Camera } from 'lucide-react';
+import { CameraCapture } from '@/components/CameraCapture';
 
 interface FormData {
   lojaId: string;
@@ -62,6 +63,8 @@ export default function SolicitacaoForm() {
   ]);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [cameraOpen, setCameraOpen] = useState(false);
+  const [cameraTarget, setCameraTarget] = useState<{ materialId: string; fotoIndex: 1 | 2 } | null>(null);
   const submitMutation = trpc.solicitacao.submit.useMutation();
 
   // Carregar lojas
@@ -650,21 +653,39 @@ export default function SolicitacaoForm() {
                     {[1, 2].map((fotoIndex) => (
                       <div key={`foto${fotoIndex}`}>
                         <Label className="text-xs">Foto {fotoIndex} (opcional)</Label>
-                        <div className="mt-1 border-2 border-dashed rounded-lg p-2 text-center cursor-pointer hover:bg-blue-50">
-                          <input
-                            type="file"
-                            accept="image/*"
-                            onChange={(e) => {
-                              const file = e.target.files?.[0];
-                              if (file) handleFotoChange(material.id, fotoIndex as 1 | 2, file);
-                            }}
-                            className="hidden"
-                            id={`foto${fotoIndex}-${material.id}`}
-                          />
-                          <label htmlFor={`foto${fotoIndex}-${material.id}`} className="cursor-pointer block">
-                            <Upload size={16} className="mx-auto mb-1" />
-                            <span className="text-xs">Clique para enviar</span>
-                          </label>
+                        <div className="mt-1 space-y-2">
+                          {/* Opções de upload */}
+                          <div className="flex gap-2">
+                            {/* Galeria */}
+                            <div className="flex-1 border-2 border-dashed rounded-lg p-2 text-center cursor-pointer hover:bg-blue-50">
+                              <input
+                                type="file"
+                                accept="image/*"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) handleFotoChange(material.id, fotoIndex as 1 | 2, file);
+                                }}
+                                className="hidden"
+                                id={`foto${fotoIndex}-${material.id}`}
+                              />
+                              <label htmlFor={`foto${fotoIndex}-${material.id}`} className="cursor-pointer block">
+                                <Upload size={14} className="mx-auto mb-1" />
+                                <span className="text-xs">Galeria</span>
+                              </label>
+                            </div>
+                            {/* Câmera */}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setCameraTarget({ materialId: material.id, fotoIndex: fotoIndex as 1 | 2 });
+                                setCameraOpen(true);
+                              }}
+                              className="flex-1 border-2 border-dashed border-blue-400 rounded-lg p-2 text-center cursor-pointer hover:bg-blue-50 flex flex-col items-center justify-center"
+                            >
+                              <Camera size={14} className="mb-1" />
+                              <span className="text-xs">Câmera</span>
+                            </button>
+                          </div>
                         </div>
                         {(fotoIndex === 1 ? material.foto1Preview : material.foto2Preview) && (
                           <img src={fotoIndex === 1 ? material.foto1Preview : material.foto2Preview} alt={`Preview ${fotoIndex}`} className="mt-2 w-full h-20 object-cover rounded" />
@@ -698,6 +719,20 @@ export default function SolicitacaoForm() {
           </Button>
         </form>
       </div>
+
+      {/* Modal de Captura de Câmera */}
+      {cameraOpen && cameraTarget && (
+        <CameraCapture
+          onCapture={(blob) => {
+            const file = new File([blob], `photo-${Date.now()}.jpg`, { type: 'image/jpeg' });
+            handleFotoChange(cameraTarget.materialId, cameraTarget.fotoIndex, file);
+          }}
+          onClose={() => {
+            setCameraOpen(false);
+            setCameraTarget(null);
+          }}
+        />
+      )}
     </div>
   );
 }
