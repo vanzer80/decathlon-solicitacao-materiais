@@ -389,7 +389,7 @@ export default function SolicitacaoForm() {
         {/* Header */}
         <div className="mb-6">
           <h1 className="text-3xl font-bold" style={{ color: '#0082C3' }}>Solicitação de Materiais</h1>
-          <p className="text-gray-600">Decathlon - Manutenção e Suporte</p>
+          <p className="text-gray-600">Manutenção e Suporte</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
