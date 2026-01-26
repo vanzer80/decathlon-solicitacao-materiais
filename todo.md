@@ -48,3 +48,7 @@
 - [x] Resposta inválida do servidor (webhook retornando HTML 404)
 - [x] Melhorar logging de erros do webhook
 - [x] Adicionar suporte para URLs customizadas do webhook via env var
+- [x] Erro 401 do webhook (atualizada URL para AKfycbz5-qhpg3UDrWSP0pDydcnK9olN8dF7fCzI0oFXcRIs-AhnAiy_xQcpB0mhaddxaEBK)
+- [x] Adicionar header Authorization com Bearer token
+- [x] Melhorar UX do dropdown de lojas (abrir todas as opções ao clicar)
+- [x] Carregar dados atualizados de lojas da planilha (52 lojas)

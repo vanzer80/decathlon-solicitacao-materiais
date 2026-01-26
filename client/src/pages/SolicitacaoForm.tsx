@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -39,6 +41,7 @@ export default function SolicitacaoForm() {
   const [lojaSearchValue, setLojaSearchValue] = useState('');
   const [loading, setLoading] = useState(false);
   const [successRequestId, setSuccessRequestId] = useState<string | null>(null);
+  const [lojasLoaded, setLojasLoaded] = useState(false);
   
   const [formData, setFormData] = useState<FormData>({
     lojaId: '',
@@ -68,9 +71,11 @@ export default function SolicitacaoForm() {
         const response = await fetch('/lojas.json');
         const data = await response.json();
         setLojas(data);
+        setLojasLoaded(true);
       } catch (error) {
         console.error('Erro ao carregar lojas:', error);
         toast.error('Erro ao carregar lista de lojas');
+        setLojasLoaded(true);
       }
     };
     loadLojas();
@@ -79,15 +84,20 @@ export default function SolicitacaoForm() {
   // Filtrar lojas baseado na busca
   useEffect(() => {
     if (lojaSearchValue.trim() === '') {
-      setFilteredLojas([]);
+      // Se vazio, mostrar todas as lojas quando o dropdown está aberto
+      if (lojaSearchOpen && lojasLoaded) {
+        setFilteredLojas(lojas);
+      } else {
+        setFilteredLojas([]);
+      }
     } else {
       const filtered = lojas.filter(loja =>
         loja.label.toLowerCase().includes(lojaSearchValue.toLowerCase()) ||
         loja.id.includes(lojaSearchValue)
       );
-      setFilteredLojas(filtered.slice(0, 10));
+      setFilteredLojas(filtered);
     }
-  }, [lojaSearchValue, lojas]);
+  }, [lojaSearchValue, lojas, lojaSearchOpen, lojasLoaded]);
 
   const handleSelectLoja = (loja: Loja) => {
     setFormData(prev => ({
@@ -95,14 +105,28 @@ export default function SolicitacaoForm() {
       lojaId: loja.id,
       lojaLabel: loja.label,
     }));
-    setLojaSearchValue(loja.label);
+    setLojaSearchValue('');
     setLojaSearchOpen(false);
+    // Limpar erro de loja quando selecionada
+    setErrors(prev => {
+      const newErrors = { ...prev };
+      delete newErrors.lojaId;
+      return newErrors;
+    });
   };
 
-  const handleFormChange = (field: keyof FormData, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+  const handleFormChange = (field: string, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value,
+    }));
+    // Limpar erro do campo quando usuário começa a digitar
     if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: '' }));
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
     }
   };
 
@@ -115,7 +139,7 @@ export default function SolicitacaoForm() {
   };
 
   const handleAddMaterial = () => {
-    const newId = String(Math.max(...materiais.map(m => parseInt(m.id) || 0)) + 1);
+    const newId = String(Math.max(...materiais.map(m => parseInt(m.id)), 0) + 1);
     setMateriais(prev => [
       ...prev,
       { id: newId, descricao: '', quantidade: 1, unidade: 'un', urgencia: 'Média' },
@@ -126,59 +150,44 @@ export default function SolicitacaoForm() {
     if (materiais.length > 1) {
       setMateriais(prev => prev.filter(m => m.id !== id));
     } else {
-      toast.error('Deve haver pelo menos um material');
+      toast.error('Você deve ter pelo menos um material');
     }
   };
 
-  const handleFotoChange = (id: string, fotoField: 'foto1' | 'foto2', file: File | undefined) => {
-    if (file) {
-      const validation = validateImageFile(file);
-      if (!validation.valid) {
-        toast.error(validation.error || 'Erro ao validar imagem');
-        return;
-      }
-
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const previewField = fotoField === 'foto1' ? 'foto1Preview' : 'foto2Preview';
-        setMateriais(prev =>
-          prev.map(m =>
-            m.id === id
-              ? {
-                  ...m,
-                  [fotoField]: file,
-                  [previewField]: e.target?.result as string,
-                }
-              : m
-          )
-        );
-      };
-      reader.readAsDataURL(file);
+  const handleFotoChange = async (materialId: string, fotoIndex: 1 | 2, file: File) => {
+    if (!validateImageFile(file)) {
+      toast.error('Arquivo inválido. Máximo 5MB, apenas imagens');
+      return;
     }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const preview = e.target?.result as string;
+      handleMaterialChange(materialId, `foto${fotoIndex}Preview`, preview);
+    };
+    reader.readAsDataURL(file);
   };
 
-  const validateForm = (): boolean => {
+  const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
     if (!formData.lojaId) newErrors.lojaId = 'Loja é obrigatória';
-    if (!formData.solicitanteNome.trim()) newErrors.solicitanteNome = 'Nome do solicitante é obrigatório';
+    if (!formData.solicitanteNome) newErrors.solicitanteNome = 'Nome é obrigatório';
+    if (!formData.solicitanteTelefone) newErrors.solicitanteTelefone = 'Telefone é obrigatório';
     if (!formData.tipoEquipe) newErrors.tipoEquipe = 'Tipo de equipe é obrigatório';
-    if (formData.tipoEquipe === 'Terceirizada' && !formData.empresaTerceira.trim()) {
+    if (formData.tipoEquipe === 'Terceirizada' && !formData.empresaTerceira) {
       newErrors.empresaTerceira = 'Empresa terceira é obrigatória';
     }
     if (!formData.tipoServico) newErrors.tipoServico = 'Tipo de serviço é obrigatório';
     if (!formData.sistemaAfetado) newErrors.sistemaAfetado = 'Sistema afetado é obrigatório';
-    if (!formData.descricaoGeralServico.trim()) newErrors.descricaoGeralServico = 'Descrição é obrigatória';
+    if (!formData.descricaoGeralServico) newErrors.descricaoGeralServico = 'Descrição é obrigatória';
 
-    if (materiais.length === 0) {
-      newErrors.materiais = 'Deve haver pelo menos um material';
-    } else {
-      materiais.forEach((m, idx) => {
-        if (!m.descricao.trim()) newErrors[`material_${m.id}_descricao`] = 'Descrição obrigatória';
-        if (m.quantidade <= 0) newErrors[`material_${m.id}_quantidade`] = 'Quantidade deve ser > 0';
-        if (!m.unidade) newErrors[`material_${m.id}_unidade`] = 'Unidade obrigatória';
-        if (!m.urgencia) newErrors[`material_${m.id}_urgencia`] = 'Urgência obrigatória';
-      });
+    // Validar materiais
+    const validMateriais = materiais.filter(
+      m => m.descricao.trim() && m.quantidade > 0 && m.unidade && m.urgencia
+    );
+    if (validMateriais.length === 0) {
+      newErrors.materiais = 'Adicione pelo menos um material com descrição, quantidade e urgência';
     }
 
     setErrors(newErrors);
@@ -188,64 +197,68 @@ export default function SolicitacaoForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Honeypot check
+    if (formData.honeypot) {
+      console.log('[Honeypot] Spam detectado');
+      return;
+    }
+
     if (!validateForm()) {
       toast.error('Preencha todos os campos obrigatórios');
       return;
     }
 
     setLoading(true);
-
     try {
       const requestId = generateRequestId();
       const timestampEnvio = new Date().toISOString();
 
       // Upload de fotos
-      const foto1Urls: string[] = [];
-      const foto2Urls: string[] = [];
+      const foto1Urls: (string | undefined)[] = [];
+      const foto2Urls: (string | undefined)[] = [];
 
       for (const material of materiais) {
-        let foto1Url = '';
-        let foto2Url = '';
-
-        if (material.foto1) {
+        if (material.foto1Preview) {
           try {
-            const formDataFoto = new FormData();
-            formDataFoto.append('file', material.foto1);
+            const formDataUpload = new FormData();
+            const blob = await fetch(material.foto1Preview).then(r => r.blob());
+            formDataUpload.append('file', blob, `foto1-${material.id}.jpg`);
+
             const uploadResponse = await fetch('/api/upload', {
               method: 'POST',
-              body: formDataFoto,
+              body: formDataUpload,
             });
-            if (uploadResponse.ok) {
-              const { url } = await uploadResponse.json();
-              foto1Url = url;
-            }
+            const uploadData = await uploadResponse.json();
+            foto1Urls.push(uploadData.url);
           } catch (error) {
             console.error('Erro ao fazer upload da foto 1:', error);
+            foto1Urls.push('');
           }
+        } else {
+          foto1Urls.push('');
         }
 
-        if (material.foto2) {
+        if (material.foto2Preview) {
           try {
-            const formDataFoto = new FormData();
-            formDataFoto.append('file', material.foto2);
+            const formDataUpload = new FormData();
+            const blob = await fetch(material.foto2Preview).then(r => r.blob());
+            formDataUpload.append('file', blob, `foto2-${material.id}.jpg`);
+
             const uploadResponse = await fetch('/api/upload', {
               method: 'POST',
-              body: formDataFoto,
+              body: formDataUpload,
             });
-            if (uploadResponse.ok) {
-              const { url } = await uploadResponse.json();
-              foto2Url = url;
-            }
+            const uploadData = await uploadResponse.json();
+            foto2Urls.push(uploadData.url);
           } catch (error) {
             console.error('Erro ao fazer upload da foto 2:', error);
+            foto2Urls.push('');
           }
+        } else {
+          foto2Urls.push('');
         }
-
-        foto1Urls.push(foto1Url);
-        foto2Urls.push(foto2Url);
       }
 
-      // Enviar solicitação
       const result = await submitMutation.mutateAsync({
         requestId,
         timestampEnvio,
@@ -348,9 +361,7 @@ export default function SolicitacaoForm() {
       <div className="max-w-2xl mx-auto">
         {/* Header */}
         <div className="mb-6">
-          <h1 className="text-3xl font-bold mb-2" style={{ color: '#0082C3' }}>
-            Solicitação de Materiais
-          </h1>
+          <h1 className="text-3xl font-bold" style={{ color: '#0082C3' }}>Solicitação de Materiais</h1>
           <p className="text-gray-600">Decathlon - Manutenção e Suporte</p>
         </div>
 
@@ -378,20 +389,24 @@ export default function SolicitacaoForm() {
                 <Label htmlFor="loja">Loja *</Label>
                 <div className="relative mt-2">
                   <Input
-                    placeholder="Buscar loja..."
+                    placeholder="Clique para ver todas as lojas ou digite para buscar..."
                     value={lojaSearchValue}
                     onChange={(e) => setLojaSearchValue(e.target.value)}
                     onFocus={() => setLojaSearchOpen(true)}
+                    onBlur={() => setTimeout(() => setLojaSearchOpen(false), 200)}
                     className={errors.lojaId ? 'border-red-500' : ''}
                   />
                   {lojaSearchOpen && filteredLojas.length > 0 && (
-                    <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-10 max-h-48 overflow-y-auto">
+                    <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-10 max-h-64 overflow-y-auto">
+                      <div className="sticky top-0 bg-gray-50 px-4 py-2 border-b text-xs text-gray-600 font-semibold">
+                        {filteredLojas.length} loja{filteredLojas.length !== 1 ? 's' : ''} disponível{filteredLojas.length !== 1 ? 's' : ''}
+                      </div>
                       {filteredLojas.map(loja => (
                         <button
                           key={loja.id}
                           type="button"
                           onClick={() => handleSelectLoja(loja)}
-                          className="w-full text-left px-4 py-2 hover:bg-blue-50 border-b last:border-b-0"
+                          className="w-full text-left px-4 py-2 hover:bg-blue-50 border-b last:border-b-0 transition-colors"
                         >
                           <div className="font-semibold text-sm">{loja.id}</div>
                           <div className="text-xs text-gray-600">{loja.label}</div>
@@ -399,10 +414,20 @@ export default function SolicitacaoForm() {
                       ))}
                     </div>
                   )}
+                  {lojaSearchOpen && filteredLojas.length === 0 && lojaSearchValue.trim() === '' && !lojasLoaded && (
+                    <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-10 p-3 text-center text-gray-500 text-sm">
+                      Carregando lojas...
+                    </div>
+                  )}
+                  {lojaSearchOpen && filteredLojas.length === 0 && lojaSearchValue.trim() !== '' && (
+                    <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-10 p-3 text-center text-gray-500 text-sm">
+                      Nenhuma loja encontrada para "{lojaSearchValue}"
+                    </div>
+                  )}
                 </div>
                 {errors.lojaId && <p className="text-red-500 text-sm mt-1">{errors.lojaId}</p>}
                 {formData.lojaId && (
-                  <p className="text-sm text-green-600 mt-1">✓ {formData.lojaLabel}</p>
+                  <p className="text-sm text-green-600 mt-1">✓ Loja selecionada: {formData.lojaLabel}</p>
                 )}
               </div>
 
@@ -421,14 +446,15 @@ export default function SolicitacaoForm() {
 
               {/* Telefone */}
               <div>
-                <Label htmlFor="telefone">Telefone / WhatsApp</Label>
+                <Label htmlFor="telefone">Telefone / WhatsApp *</Label>
                 <Input
                   id="telefone"
                   placeholder="(11) 99999-9999"
                   value={formData.solicitanteTelefone}
                   onChange={(e) => handleFormChange('solicitanteTelefone', e.target.value)}
-                  className="mt-2"
+                  className={errors.solicitanteTelefone ? 'border-red-500 mt-2' : 'mt-2'}
                 />
+                {errors.solicitanteTelefone && <p className="text-red-500 text-sm mt-1">{errors.solicitanteTelefone}</p>}
               </div>
 
               {/* Número do Chamado */}
@@ -456,7 +482,7 @@ export default function SolicitacaoForm() {
               <div>
                 <Label htmlFor="tipoEquipe">Tipo de Equipe *</Label>
                 <Select value={formData.tipoEquipe} onValueChange={(value) => handleFormChange('tipoEquipe', value)}>
-                  <SelectTrigger id="tipoEquipe" className={`mt-2 ${errors.tipoEquipe ? 'border-red-500' : ''}`}>
+                  <SelectTrigger className={`mt-2 ${errors.tipoEquipe ? 'border-red-500' : ''}`}>
                     <SelectValue placeholder="Selecione..." />
                   </SelectTrigger>
                   <SelectContent>
@@ -471,10 +497,10 @@ export default function SolicitacaoForm() {
               {/* Empresa Terceira (condicional) */}
               {formData.tipoEquipe === 'Terceirizada' && (
                 <div>
-                  <Label htmlFor="empresaTerceira">Empresa / Nome da Equipe Terceirizada *</Label>
+                  <Label htmlFor="empresaTerceira">Empresa Terceira *</Label>
                   <Input
                     id="empresaTerceira"
-                    placeholder="Digite o nome da empresa"
+                    placeholder="Nome da empresa terceirizada"
                     value={formData.empresaTerceira}
                     onChange={(e) => handleFormChange('empresaTerceira', e.target.value)}
                     className={`mt-2 ${errors.empresaTerceira ? 'border-red-500' : ''}`}
@@ -487,7 +513,7 @@ export default function SolicitacaoForm() {
               <div>
                 <Label htmlFor="tipoServico">Tipo de Serviço *</Label>
                 <Select value={formData.tipoServico} onValueChange={(value) => handleFormChange('tipoServico', value)}>
-                  <SelectTrigger id="tipoServico" className={`mt-2 ${errors.tipoServico ? 'border-red-500' : ''}`}>
+                  <SelectTrigger className={`mt-2 ${errors.tipoServico ? 'border-red-500' : ''}`}>
                     <SelectValue placeholder="Selecione..." />
                   </SelectTrigger>
                   <SelectContent>
@@ -501,9 +527,9 @@ export default function SolicitacaoForm() {
 
               {/* Sistema Afetado */}
               <div>
-                <Label htmlFor="sistemaAfetado">Tipo de Serviço / Equipamento *</Label>
+                <Label htmlFor="sistemaAfetado">Sistema Afetado *</Label>
                 <Select value={formData.sistemaAfetado} onValueChange={(value) => handleFormChange('sistemaAfetado', value)}>
-                  <SelectTrigger id="sistemaAfetado" className={`mt-2 ${errors.sistemaAfetado ? 'border-red-500' : ''}`}>
+                  <SelectTrigger className={`mt-2 ${errors.sistemaAfetado ? 'border-red-500' : ''}`}>
                     <SelectValue placeholder="Selecione..." />
                   </SelectTrigger>
                   <SelectContent>
@@ -520,11 +546,11 @@ export default function SolicitacaoForm() {
                 <Label htmlFor="descricao">Descrição Geral do Serviço *</Label>
                 <Textarea
                   id="descricao"
-                  placeholder="Descreva o serviço que precisa ser realizado..."
+                  placeholder="Descreva o serviço a ser realizado..."
                   value={formData.descricaoGeralServico}
                   onChange={(e) => handleFormChange('descricaoGeralServico', e.target.value)}
-                  rows={4}
                   className={`mt-2 ${errors.descricaoGeralServico ? 'border-red-500' : ''}`}
+                  rows={3}
                 />
                 {errors.descricaoGeralServico && <p className="text-red-500 text-sm mt-1">{errors.descricaoGeralServico}</p>}
               </div>
@@ -532,165 +558,134 @@ export default function SolicitacaoForm() {
           </Card>
 
           {/* SEÇÃO 3: MATERIAIS */}
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold">Materiais Solicitados *</h2>
+          <Card>
+            <CardHeader>
+              <CardTitle>Materiais Solicitados</CardTitle>
+              <CardDescription>Adicione os materiais necessários para o serviço</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {errors.materiais && <p className="text-red-500 text-sm">{errors.materiais}</p>}
+              
+              {materiais.map((material, index) => (
+                <div key={material.id} className="border rounded-lg p-4 space-y-3 bg-gray-50">
+                  <div className="flex justify-between items-center mb-3">
+                    <h4 className="font-semibold text-sm">Material {index + 1}</h4>
+                    {materiais.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveMaterial(material.id)}
+                        className="text-red-500 hover:text-red-700"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Descrição */}
+                  <div>
+                    <Label className="text-xs">Descrição *</Label>
+                    <Input
+                      placeholder="Ex: Filtro de ar"
+                      value={material.descricao}
+                      onChange={(e) => handleMaterialChange(material.id, 'descricao', e.target.value)}
+                      className="mt-1"
+                    />
+                  </div>
+
+                  {/* Especificação */}
+                  <div>
+                    <Label className="text-xs">Especificação</Label>
+                    <Input
+                      placeholder="Ex: Modelo XYZ, Tamanho 10x10"
+                      value={material.especificacao || ''}
+                      onChange={(e) => handleMaterialChange(material.id, 'especificacao', e.target.value)}
+                      className="mt-1"
+                    />
+                  </div>
+
+                  {/* Quantidade e Unidade */}
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <Label className="text-xs">Quantidade *</Label>
+                      <Input
+                        type="number"
+                        min="1"
+                        value={material.quantidade}
+                        onChange={(e) => handleMaterialChange(material.id, 'quantidade', parseInt(e.target.value) || 1)}
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Unidade *</Label>
+                      <Select value={material.unidade} onValueChange={(value) => handleMaterialChange(material.id, 'unidade', value)}>
+                        <SelectTrigger className="mt-1">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {UNIDADES.map(unidade => (
+                            <SelectItem key={unidade} value={unidade}>{unidade}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {/* Urgência */}
+                  <div>
+                    <Label className="text-xs">Urgência *</Label>
+                    <Select value={material.urgencia} onValueChange={(value) => handleMaterialChange(material.id, 'urgencia', value)}>
+                      <SelectTrigger className="mt-1">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {URGENCIAS.map(urgencia => (
+                          <SelectItem key={urgencia} value={urgencia}>{urgencia}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Fotos */}
+                  <div className="grid grid-cols-2 gap-2">
+                    {[1, 2].map((fotoIndex) => (
+                      <div key={`foto${fotoIndex}`}>
+                        <Label className="text-xs">Foto {fotoIndex} (opcional)</Label>
+                        <div className="mt-1 border-2 border-dashed rounded-lg p-2 text-center cursor-pointer hover:bg-blue-50">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) handleFotoChange(material.id, fotoIndex as 1 | 2, file);
+                            }}
+                            className="hidden"
+                            id={`foto${fotoIndex}-${material.id}`}
+                          />
+                          <label htmlFor={`foto${fotoIndex}-${material.id}`} className="cursor-pointer block">
+                            <Upload size={16} className="mx-auto mb-1" />
+                            <span className="text-xs">Clique para enviar</span>
+                          </label>
+                        </div>
+                        {(fotoIndex === 1 ? material.foto1Preview : material.foto2Preview) && (
+                          <img src={fotoIndex === 1 ? material.foto1Preview : material.foto2Preview} alt={`Preview ${fotoIndex}`} className="mt-2 w-full h-20 object-cover rounded" />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+
               <Button
                 type="button"
                 onClick={handleAddMaterial}
                 variant="outline"
-                size="sm"
-                className="gap-2"
+                className="w-full"
               >
-                <Plus className="w-4 h-4" />
+                <Plus size={18} className="mr-2" />
                 Adicionar Material
               </Button>
-            </div>
-
-            <div className="space-y-4">
-              {materiais.map((material, idx) => (
-                <Card key={material.id}>
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-base">Material {idx + 1}</CardTitle>
-                      {materiais.length > 1 && (
-                        <Button
-                          type="button"
-                          onClick={() => handleRemoveMaterial(material.id)}
-                          variant="ghost"
-                          size="sm"
-                          className="text-red-500 hover:text-red-700"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      )}
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {/* Descrição */}
-                    <div>
-                      <Label>Descrição do Material *</Label>
-                      <Input
-                        placeholder="Ex: Correia de transmissão"
-                        value={material.descricao}
-                        onChange={(e) => handleMaterialChange(material.id, 'descricao', e.target.value)}
-                        className={`mt-2 ${errors[`material_${material.id}_descricao`] ? 'border-red-500' : ''}`}
-                      />
-                      {errors[`material_${material.id}_descricao`] && (
-                        <p className="text-red-500 text-sm mt-1">{errors[`material_${material.id}_descricao`]}</p>
-                      )}
-                    </div>
-
-                    {/* Especificação */}
-                    <div>
-                      <Label>Especificação Técnica</Label>
-                      <Input
-                        placeholder="Ex: Modelo XYZ, 100mm"
-                        value={material.especificacao || ''}
-                        onChange={(e) => handleMaterialChange(material.id, 'especificacao', e.target.value)}
-                        className="mt-2"
-                      />
-                    </div>
-
-                    {/* Quantidade e Unidade */}
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label>Quantidade *</Label>
-                        <Input
-                          type="number"
-                          min="1"
-                          value={material.quantidade}
-                          onChange={(e) => handleMaterialChange(material.id, 'quantidade', parseInt(e.target.value) || 1)}
-                          className={`mt-2 ${errors[`material_${material.id}_quantidade`] ? 'border-red-500' : ''}`}
-                        />
-                        {errors[`material_${material.id}_quantidade`] && (
-                          <p className="text-red-500 text-sm mt-1">{errors[`material_${material.id}_quantidade`]}</p>
-                        )}
-                      </div>
-                      <div>
-                        <Label>Unidade *</Label>
-                        <Select value={material.unidade} onValueChange={(value) => handleMaterialChange(material.id, 'unidade', value)}>
-                          <SelectTrigger className={`mt-2 ${errors[`material_${material.id}_unidade`] ? 'border-red-500' : ''}`}>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {UNIDADES.map(un => (
-                              <SelectItem key={un} value={un}>{un}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        {errors[`material_${material.id}_unidade`] && (
-                          <p className="text-red-500 text-sm mt-1">{errors[`material_${material.id}_unidade`]}</p>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Urgência */}
-                    <div>
-                      <Label>Urgência *</Label>
-                      <Select value={material.urgencia} onValueChange={(value) => handleMaterialChange(material.id, 'urgencia', value)}>
-                        <SelectTrigger className={`mt-2 ${errors[`material_${material.id}_urgencia`] ? 'border-red-500' : ''}`}>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {URGENCIAS.map(urg => (
-                            <SelectItem key={urg} value={urg}>{urg}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      {errors[`material_${material.id}_urgencia`] && (
-                        <p className="text-red-500 text-sm mt-1">{errors[`material_${material.id}_urgencia`]}</p>
-                      )}
-                    </div>
-
-                    {/* Fotos */}
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label>Foto 1</Label>
-                        <div className="mt-2">
-                          <label className="flex items-center justify-center w-full px-4 py-6 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-blue-400 hover:bg-blue-50">
-                            <div className="flex flex-col items-center justify-center">
-                              <Upload className="w-6 h-6 text-gray-400 mb-1" />
-                              <span className="text-xs text-gray-600">Clique para enviar</span>
-                            </div>
-                            <input
-                              type="file"
-                              accept="image/*"
-                              onChange={(e) => handleFotoChange(material.id, 'foto1', e.target.files?.[0])}
-                              className="hidden"
-                            />
-                          </label>
-                          {material.foto1Preview && (
-                            <img src={material.foto1Preview} alt="Preview 1" className="mt-2 w-full h-24 object-cover rounded" />
-                          )}
-                        </div>
-                      </div>
-                      <div>
-                        <Label>Foto 2</Label>
-                        <div className="mt-2">
-                          <label className="flex items-center justify-center w-full px-4 py-6 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-blue-400 hover:bg-blue-50">
-                            <div className="flex flex-col items-center justify-center">
-                              <Upload className="w-6 h-6 text-gray-400 mb-1" />
-                              <span className="text-xs text-gray-600">Clique para enviar</span>
-                            </div>
-                            <input
-                              type="file"
-                              accept="image/*"
-                              onChange={(e) => handleFotoChange(material.id, 'foto2', e.target.files?.[0])}
-                              className="hidden"
-                            />
-                          </label>
-                          {material.foto2Preview && (
-                            <img src={material.foto2Preview} alt="Preview 2" className="mt-2 w-full h-24 object-cover rounded" />
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
+            </CardContent>
+          </Card>
 
           {/* Botão Enviar */}
           <Button

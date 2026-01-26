@@ -69,28 +69,38 @@ export const appRouter = router({
           };
           
           // Enviar para webhook
-          const webhookUrlString = process.env.WEBHOOK_URL || 'https://script.google.com/macros/s/AKfycby9oLYJI9mJqSDOEi6kQQELU7naTfjpesQIYyfRvS8/exec';
+          const webhookUrlString = process.env.WEBHOOK_URL || 'https://script.google.com/macros/s/AKfycbz5-qhpg3UDrWSP0pDydcnK9olN8dF7fCzI0oFXcRIs-AhnAiy_xQcpB0mhaddxaEBK/exec';
           const webhookUrl = new URL(webhookUrlString);
           webhookUrl.searchParams.append('token', 'DECATHLON-2026');
           
           console.log('[Webhook] Enviando para:', webhookUrl.toString().split('?')[0]);
+          console.log('[Webhook] Token:', 'DECATHLON-2026');
           
           const response = await fetch(webhookUrl.toString(), {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
               'X-Webhook-Token': 'DECATHLON-2026',
+              'Authorization': 'Bearer DECATHLON-2026',
             },
             body: JSON.stringify(payload),
           });
           
           const responseText = await response.text();
-          console.log('[Webhook] Status:', response.status);
-          console.log('[Webhook] Response Text:', responseText.substring(0, 500));
+          console.log('[Webhook] Status:', response.status, response.statusText);
+          console.log('[Webhook] Response Text:', responseText.substring(0, 300));
           
           // Verificar se a resposta é válida
           if (!response.ok) {
-            console.error('[Webhook] HTTP Error:', response.status, responseText);
+            console.error('[Webhook] HTTP Error:', response.status);
+            console.error('[Webhook] Response:', responseText.substring(0, 200));
+            
+            // Erro 401: Problema de autenticação
+            if (response.status === 401) {
+              console.error('[Webhook] ❌ Erro 401: Falha de autenticação. Verifique o token WEBHOOK_TOKEN');
+              return { success: false, error: 'Erro de autenticação com o servidor (401)' };
+            }
+            
             return { success: false, error: `Erro HTTP ${response.status} do servidor` };
           }
           
@@ -103,18 +113,22 @@ export const appRouter = router({
             console.error('[Webhook] Response was:', responseText);
             // Se não for JSON válido, tentar interpretar como sucesso se a resposta for vazia ou HTML
             if (responseText.trim() === '' || responseText.includes('<!DOCTYPE') || responseText.includes('<html')) {
-              console.log('[Webhook] Received HTML/empty response, assuming success');
+              console.log('[Webhook] ⚠️  Received HTML/empty response, assuming success');
               return { success: true, requestId };
             }
-            return { success: false, error: 'Resposta inválida do servidor (não é JSON)' };
+            return { success: false, error: 'Resposta inválida do servidor (não é JSON válido)' };
           }
           
           if (responseData.ok === true) {
             console.log('[Webhook] ✅ Success response received');
+            console.log('[Webhook] Message:', responseData.message || 'Solicitação recebida');
             return { success: true, requestId };
           } else if (responseData.ok === false) {
             console.error('[Webhook] ❌ Error from webhook:', responseData.error);
             return { success: false, error: responseData.error || 'Erro ao enviar solicitação' };
+          } else if (responseData.success === true) {
+            console.log('[Webhook] ✅ Success (alternative format):', responseData);
+            return { success: true, requestId };
           } else {
             // Se não houver campo 'ok', considerar como sucesso se houver um ID
             console.log('[Webhook] ✅ Response without ok field (assuming success):', responseData);
