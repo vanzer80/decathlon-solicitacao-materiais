@@ -1,6 +1,7 @@
 import { useRef, useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Camera, X, Check, RotateCcw } from 'lucide-react';
+import { Camera, X, Check, RotateCcw, Loader2 } from 'lucide-react';
+import { compressImage, formatFileSize } from '@/lib/imageCompression';
 
 interface CameraCaptureProps {
   onCapture: (blob: Blob) => void;
@@ -14,6 +15,8 @@ export function CameraCapture({ onCapture, onClose }: CameraCaptureProps) {
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isCameraReady, setIsCameraReady] = useState(false);
+  const [isCompressing, setIsCompressing] = useState(false);
+  const [compressionInfo, setCompressionInfo] = useState<string | null>(null);
 
   useEffect(() => {
     startCamera();
@@ -27,7 +30,7 @@ export function CameraCapture({ onCapture, onClose }: CameraCaptureProps) {
       setError(null);
       const mediaStream = await navigator.mediaDevices.getUserMedia({
         video: {
-          facingMode: 'environment', // Câmera traseira em dispositivos móveis
+          facingMode: 'environment',
           width: { ideal: 1280 },
           height: { ideal: 720 },
         },
@@ -36,8 +39,7 @@ export function CameraCapture({ onCapture, onClose }: CameraCaptureProps) {
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
         setStream(mediaStream);
-        
-        // Aguardar o vídeo estar pronto
+
         videoRef.current.onloadedmetadata = () => {
           setIsCameraReady(true);
         };
@@ -69,28 +71,53 @@ export function CameraCapture({ onCapture, onClose }: CameraCaptureProps) {
         context.drawImage(videoRef.current, 0, 0);
         const imageData = canvasRef.current.toDataURL('image/jpeg', 0.9);
         setCapturedImage(imageData);
+        setCompressionInfo(null);
       }
     }
   };
 
-  const confirmCapture = () => {
-    if (capturedImage) {
-      canvasRef.current?.toBlob(
-        (blob) => {
-          if (blob) {
-            onCapture(blob);
-            stopCamera();
-            onClose();
-          }
-        },
-        'image/jpeg',
-        0.9
-      );
+  const confirmCapture = async () => {
+    if (capturedImage && canvasRef.current) {
+      setIsCompressing(true);
+      try {
+        const blob = await new Promise<Blob | null>((resolve) => {
+          canvasRef.current?.toBlob((b) => resolve(b), 'image/jpeg', 0.9);
+        });
+
+        if (!blob) {
+          setError('Erro ao processar imagem');
+          setIsCompressing(false);
+          return;
+        }
+
+        const file = new File([blob], 'photo.jpg', { type: 'image/jpeg' });
+        const originalSize = file.size;
+
+        const result = await compressImage(file, {
+          maxWidth: 1280,
+          maxHeight: 1280,
+          quality: 0.8,
+          maxSizeKB: 500,
+        });
+
+        setCompressionInfo(
+          `Comprimido: ${formatFileSize(originalSize)} → ${formatFileSize(result.compressedSize)} (${result.reductionPercent}% menor)`
+        );
+
+        onCapture(result.blob);
+        stopCamera();
+        onClose();
+      } catch (err) {
+        setError(`Erro ao comprimir: ${err instanceof Error ? err.message : 'desconhecido'}`);
+      } finally {
+        setIsCompressing(false);
+      }
     }
   };
 
   const retakePhoto = () => {
     setCapturedImage(null);
+    setCompressionInfo(null);
   };
 
   return (
@@ -154,22 +181,40 @@ export function CameraCapture({ onCapture, onClose }: CameraCaptureProps) {
               </Button>
             </div>
           ) : (
-            <div className="flex gap-2">
-              <Button
-                onClick={retakePhoto}
-                variant="outline"
-                className="flex-1"
-              >
-                <RotateCcw className="mr-2 h-4 w-4" />
-                Refazer
-              </Button>
-              <Button
-                onClick={confirmCapture}
-                className="flex-1 bg-[#0082C3] hover:bg-[#006ba3]"
-              >
-                <Check className="mr-2 h-4 w-4" />
-                Confirmar
-              </Button>
+            <div className="flex flex-col gap-2">
+              {compressionInfo && (
+                <div className="rounded bg-green-50 border border-green-200 p-2 text-xs text-green-700">
+                  ✓ {compressionInfo}
+                </div>
+              )}
+              <div className="flex gap-2">
+                <Button
+                  onClick={retakePhoto}
+                  variant="outline"
+                  className="flex-1"
+                  disabled={isCompressing}
+                >
+                  <RotateCcw className="mr-2 h-4 w-4" />
+                  Refazer
+                </Button>
+                <Button
+                  onClick={confirmCapture}
+                  className="flex-1 bg-[#0082C3] hover:bg-[#006ba3]"
+                  disabled={isCompressing}
+                >
+                  {isCompressing ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Comprimindo...
+                    </>
+                  ) : (
+                    <>
+                      <Check className="mr-2 h-4 w-4" />
+                      Confirmar
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
           )}
         </div>

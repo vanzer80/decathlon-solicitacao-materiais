@@ -12,8 +12,9 @@ import { trpc } from '@/lib/trpc';
 import { generateRequestId, validateImageFile } from '@shared/utils';
 import { TIPOS_EQUIPE, TIPOS_SERVICO, SISTEMAS_AFETADOS, UNIDADES, URGENCIAS, MAX_FOTO_SIZE } from '@shared/constants';
 import type { Loja, MaterialItem } from '@shared/types';
-import { Plus, Trash2, Upload, CheckCircle, Camera } from 'lucide-react';
+import { Plus, Trash2, Upload, CheckCircle, Camera, Loader2 } from 'lucide-react';
 import { CameraCapture } from '@/components/CameraCapture';
+import { compressImage, formatFileSize } from '@/lib/imageCompression';
 
 interface FormData {
   lojaId: string;
@@ -65,6 +66,7 @@ export default function SolicitacaoForm() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [cameraOpen, setCameraOpen] = useState(false);
   const [cameraTarget, setCameraTarget] = useState<{ materialId: string; fotoIndex: 1 | 2 } | null>(null);
+  const [compressingMaterial, setCompressingMaterial] = useState<string | null>(null);
   const submitMutation = trpc.solicitacao.submit.useMutation();
 
   // Carregar lojas
@@ -163,12 +165,34 @@ export default function SolicitacaoForm() {
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const preview = e.target?.result as string;
-      handleMaterialChange(materialId, `foto${fotoIndex}Preview`, preview);
-    };
-    reader.readAsDataURL(file);
+    setCompressingMaterial(`${materialId}-${fotoIndex}`);
+    try {
+      const originalSize = file.size;
+      const result = await compressImage(file, {
+        maxWidth: 1280,
+        maxHeight: 1280,
+        quality: 0.8,
+        maxSizeKB: 500,
+      });
+
+      const reductionPercent = result.reductionPercent;
+      if (reductionPercent > 10) {
+        toast.success(
+          `Foto ${fotoIndex} comprimida: ${formatFileSize(originalSize)} → ${formatFileSize(result.compressedSize)} (${reductionPercent}% menor)`
+        );
+      }
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const preview = e.target?.result as string;
+        handleMaterialChange(materialId, `foto${fotoIndex}Preview`, preview);
+      };
+      reader.readAsDataURL(result.blob);
+    } catch (error) {
+      toast.error(`Erro ao comprimir foto: ${error instanceof Error ? error.message : 'desconhecido'}`);
+    } finally {
+      setCompressingMaterial(null);
+    }
   };
 
   const validateForm = () => {
