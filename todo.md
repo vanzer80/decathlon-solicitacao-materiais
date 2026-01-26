@@ -52,3 +52,13 @@
 - [x] Adicionar header Authorization com Bearer token
 - [x] Melhorar UX do dropdown de lojas (abrir todas as opções ao clicar)
 - [x] Carregar dados atualizados de lojas da planilha (52 lojas)
+
+## Debug: Erro 401 Resolvido
+- [x] Verificar se o token DECATHLON-2026 está correto nas propriedades do script
+- [x] Testar envio sem token (apenas URL)
+- [x] Testar envio com token apenas em query param (SUCESSO!)
+- [x] Testar envio com token apenas em header (falhou com 401)
+- [x] Verificar se o Apps Script está validando o token corretamente
+- [x] Criar script de diagnóstico para testar diferentes métodos
+
+Solucao: O Apps Script valida apenas o token em query parameter. Headers de autenticação causavam erro 401. Teste 6 confirmou sucesso com payload estruturado.

@@ -76,12 +76,11 @@ export const appRouter = router({
           console.log('[Webhook] Enviando para:', webhookUrl.toString().split('?')[0]);
           console.log('[Webhook] Token:', 'DECATHLON-2026');
           
+          // Usar apenas token em query param (método que passou no teste)
           const response = await fetch(webhookUrl.toString(), {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'X-Webhook-Token': 'DECATHLON-2026',
-              'Authorization': 'Bearer DECATHLON-2026',
             },
             body: JSON.stringify(payload),
           });
@@ -97,8 +96,13 @@ export const appRouter = router({
             
             // Erro 401: Problema de autenticação
             if (response.status === 401) {
-              console.error('[Webhook] ❌ Erro 401: Falha de autenticação. Verifique o token WEBHOOK_TOKEN');
-              return { success: false, error: 'Erro de autenticação com o servidor (401)' };
+              console.error('[Webhook] ❌ Erro 401: Falha de autenticação');
+              console.error('[Webhook] Dicas para resolver:');
+              console.error('[Webhook] 1. Verifique se o token DECATHLON-2026 está correto nas propriedades do script');
+              console.error('[Webhook] 2. Verifique se a URL do webhook está correta');
+              console.error('[Webhook] 3. Verifique se o Apps Script está publicado como aplicativo web');
+              console.error('[Webhook] 4. Tente acessar a URL diretamente no navegador para testar');
+              return { success: false, error: 'Erro de autenticação com o servidor (401). Verifique o token e a URL do webhook.' };
             }
             
             return { success: false, error: `Erro HTTP ${response.status} do servidor` };
@@ -110,18 +114,24 @@ export const appRouter = router({
             responseData = JSON.parse(responseText);
           } catch (e) {
             console.error('[Webhook] Failed to parse JSON:', e);
-            console.error('[Webhook] Response was:', responseText);
-            // Se não for JSON válido, tentar interpretar como sucesso se a resposta for vazia ou HTML
-            if (responseText.trim() === '' || responseText.includes('<!DOCTYPE') || responseText.includes('<html')) {
-              console.log('[Webhook] ⚠️  Received HTML/empty response, assuming success');
+            console.error('[Webhook] Response was:', responseText.substring(0, 500));
+            // Se não for JSON válido, verificar se é HTML ou vazio
+            if (responseText.trim() === '') {
+              console.log('[Webhook] ⚠️  Received empty response, assuming success');
               return { success: true, requestId };
+            }
+            if (responseText.includes('<!DOCTYPE') || responseText.includes('<html')) {
+              console.error('[Webhook] ❌ Webhook retornou HTML em vez de JSON');
+              console.error('[Webhook] Isso geralmente significa: URL incorreta ou Apps Script não publicado');
+              return { success: false, error: 'Webhook retornou HTML. Verifique a URL e se o Apps Script está publicado.' };
             }
             return { success: false, error: 'Resposta inválida do servidor (não é JSON válido)' };
           }
           
           if (responseData.ok === true) {
             console.log('[Webhook] ✅ Success response received');
-            console.log('[Webhook] Message:', responseData.message || 'Solicitação recebida');
+            console.log('[Webhook] Request ID:', responseData.request_id);
+            console.log('[Webhook] Rows written:', responseData.rows_written);
             return { success: true, requestId };
           } else if (responseData.ok === false) {
             console.error('[Webhook] ❌ Error from webhook:', responseData.error);
@@ -131,12 +141,13 @@ export const appRouter = router({
             return { success: true, requestId };
           } else {
             // Se não houver campo 'ok', considerar como sucesso se houver um ID
-            console.log('[Webhook] ✅ Response without ok field (assuming success):', responseData);
+            console.log('[Webhook] ✅ Response received:', responseData);
             return { success: true, requestId };
           }
         } catch (error: any) {
           console.error('[Webhook] ❌ Catch Error:', error.message);
           console.error('[Webhook] Stack:', error.stack);
+          console.error('[Webhook] Dica: Se receber erro de CORS, verifique se o Apps Script está configurado para aceitar requisições de qualquer origem');
           return { success: false, error: error.message || 'Erro ao processar solicitação' };
         }
       }),
