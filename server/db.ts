@@ -1,9 +1,9 @@
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users } from "../drizzle/schema";
+import { InsertUser, users, solicitacoes, materiais, InsertMaterial, Solicitacao, Material, InsertSolicitacao } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
-let _db: ReturnType<typeof drizzle> | null = null;
+export let _db: ReturnType<typeof drizzle> | null = null;
 
 // Lazily create the drizzle instance so local tooling can run without a DB.
 export async function getDb() {
@@ -16,6 +16,10 @@ export async function getDb() {
     }
   }
   return _db;
+}
+
+export async function initDb() {
+  return getDb();
 }
 
 export async function upsertUser(user: InsertUser): Promise<void> {
@@ -89,4 +93,77 @@ export async function getUserByOpenId(openId: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
-// TODO: add feature queries here as your schema grows.
+export async function createSolicitacao(
+  data: InsertSolicitacao
+): Promise<Solicitacao | null> {
+  const db = await getDb();
+  if (!db) return null;
+
+  try {
+    const result = await db.insert(solicitacoes).values(data);
+    const inserted = await db
+      .select()
+      .from(solicitacoes)
+      .where(eq(solicitacoes.requestId, data.requestId))
+      .limit(1);
+    return inserted.length > 0 ? inserted[0] : null;
+  } catch (error) {
+    console.error("[Database] Failed to create solicitacao:", error);
+    throw error;
+  }
+}
+
+export async function createMateriais(
+  items: InsertMaterial[]
+): Promise<Material[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  try {
+    await db.insert(materiais).values(items);
+    return items.map((item) => ({
+      ...item,
+      id: 0,
+      createdAt: new Date(),
+    })) as Material[];
+  } catch (error) {
+    console.error("[Database] Failed to create materiais:", error);
+    throw error;
+  }
+}
+
+export async function getSolicitacaoByRequestId(
+  requestId: string
+): Promise<Solicitacao | null> {
+  const db = await getDb();
+  if (!db) return null;
+
+  try {
+    const result = await db
+      .select()
+      .from(solicitacoes)
+      .where(eq(solicitacoes.requestId, requestId))
+      .limit(1);
+    return result.length > 0 ? result[0] : null;
+  } catch (error) {
+    console.error("[Database] Failed to get solicitacao:", error);
+    throw error;
+  }
+}
+
+export async function getMaterialisBySolicitacaoId(
+  solicitacaoId: number
+): Promise<Material[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  try {
+    return await db
+      .select()
+      .from(materiais)
+      .where(eq(materiais.solicitacaoId, solicitacaoId));
+  } catch (error) {
+    console.error("[Database] Failed to get materiais:", error);
+    throw error;
+  }
+}
