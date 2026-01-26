@@ -33,8 +33,18 @@
 - [x] Testar envio de 2 materiais com 1 foto (manual)
 - [x] Validar URLs públicas das fotos no Sheets (manual)
 - [x] Testar honeypot anti-spam (manual)
+- [x] Corrigir erro de resposta inválida do webhook
 
 ## Fase 5: Entrega
 - [x] Revisar e documentar código
+- [x] Corrigir tratamento de resposta do webhook (HTML/JSON)
+- [x] Adicionar modo mock para testes
+- [x] Criar script de teste do webhook
+- [x] Criar documentação de debug (WEBHOOK_DEBUG.md)
 - [ ] Criar checkpoint final
 - [ ] Publicar aplicação
+
+## Bugs Corrigidos
+- [x] Resposta inválida do servidor (webhook retornando HTML 404)
+- [x] Melhorar logging de erros do webhook
+- [x] Adicionar suporte para URLs customizadas do webhook via env var
