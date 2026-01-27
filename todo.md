@@ -66,3 +66,12 @@
 - [x] Reorganizar cards de materiais com layout melhorado
 - [x] Adicionar botões "Enviar Solicitação" (azul) e "Salvar" (verde)
 - [x] Testar responsividade mobile (funcionando)
+
+
+## Nova Feature: Animação de Carregamento
+- [x] Criar componente LoadingAnimation.tsx com spinner elegante
+- [x] Integrar animação no fluxo de envio de solicitação
+- [x] Exibir mensagem de status durante o envio
+- [x] Testar animação em diferentes velocidades de conexão
+- [x] Animação de sucesso com CheckCircle
+- [x] Animação de erro com AlertCircle

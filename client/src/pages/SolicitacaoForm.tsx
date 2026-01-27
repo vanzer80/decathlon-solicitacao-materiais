@@ -16,6 +16,7 @@ import type { Loja, MaterialItem } from '@shared/types';
 import { Plus, Trash2, Upload, CheckCircle, Camera, Loader2, Building2, Users, Package, AlertCircle } from 'lucide-react';
 import { CameraCapture } from '@/components/CameraCapture';
 import { compressImage, formatFileSize } from '@/lib/imageCompression';
+import LoadingAnimation from '@/components/LoadingAnimation';
 
 interface FormData {
   lojaId: string;
@@ -69,6 +70,9 @@ export default function SolicitacaoForm() {
   const [cameraOpen, setCameraOpen] = useState(false);
   const [cameraTarget, setCameraTarget] = useState<{ materialId: string; fotoIndex: 1 | 2 } | null>(null);
   const [compressingMaterial, setCompressingMaterial] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [submitError, setSubmitError] = useState(false);
   const submitMutation = trpc.solicitacao.submit.useMutation();
 
   // Carregar lojas
@@ -218,6 +222,9 @@ export default function SolicitacaoForm() {
     }
 
     setLoading(true);
+    setIsSubmitting(true);
+    setSubmitSuccess(false);
+    setSubmitError(false);
     try {
       const requestId = generateRequestId();
       const timestampEnvio = new Date().toISOString();
@@ -303,11 +310,22 @@ export default function SolicitacaoForm() {
         })),
       });
 
-      setSuccessRequestId(result.requestId);
-      toast.success('Solicitação enviada com sucesso!');
+      setSubmitSuccess(true);
+      // Aguardar animação de sucesso antes de mostrar tela de sucesso
+      setTimeout(() => {
+        setIsSubmitting(false);
+        setSuccessRequestId(result.requestId);
+        toast.success('Solicitação enviada com sucesso!');
+      }, 2000);
     } catch (error) {
       console.error('Erro ao enviar solicitação:', error);
-      toast.error('Erro ao enviar solicitação');
+      setSubmitError(true);
+      // Aguardar animação de erro antes de limpar
+      setTimeout(() => {
+        setIsSubmitting(false);
+        setSubmitError(false);
+        toast.error('Erro ao enviar solicitação');
+      }, 2000);
     } finally {
       setLoading(false);
     }
@@ -876,6 +894,15 @@ export default function SolicitacaoForm() {
           onClose={() => setCameraTarget(null)}
         />
       )}
+
+      {/* Loading Animation */}
+      <LoadingAnimation
+        isLoading={isSubmitting && !submitSuccess && !submitError}
+        isSuccess={submitSuccess}
+        isError={submitError}
+        message="Enviando solicitação..."
+        errorMessage="Erro ao enviar solicitação"
+      />
     </div>
   );
 }
