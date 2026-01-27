@@ -57,3 +57,12 @@
 - [x] Erro 401 do webhook (atualizada URL e método de autenticação)
 - [x] Melhorar UX do dropdown de lojas (abrir todas as opções ao clicar)
 - [x] Carregar dados atualizados de lojas da planilha (52 lojas)
+
+
+## Redesign do Layout (Conforme Mockup)
+- [x] Remover obrigatoriedade do "Número do Chamado"
+- [x] Redesenhar com ícones em cada seção
+- [x] Implementar abas para "Equipe Própria" vs "Terceirizada"
+- [x] Reorganizar cards de materiais com layout melhorado
+- [x] Adicionar botões "Enviar Solicitação" (azul) e "Salvar" (verde)
+- [x] Testar responsividade mobile (funcionando)

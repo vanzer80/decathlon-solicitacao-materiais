@@ -7,12 +7,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { trpc } from '@/lib/trpc';
 import { generateRequestId, validateImageFile } from '@shared/utils';
 import { TIPOS_EQUIPE, TIPOS_SERVICO, SISTEMAS_AFETADOS, UNIDADES, URGENCIAS, MAX_FOTO_SIZE } from '@shared/constants';
 import type { Loja, MaterialItem } from '@shared/types';
-import { Plus, Trash2, Upload, CheckCircle, Camera, Loader2 } from 'lucide-react';
+import { Plus, Trash2, Upload, CheckCircle, Camera, Loader2, Building2, Users, Package, AlertCircle } from 'lucide-react';
 import { CameraCapture } from '@/components/CameraCapture';
 import { compressImage, formatFileSize } from '@/lib/imageCompression';
 
@@ -44,6 +45,7 @@ export default function SolicitacaoForm() {
   const [loading, setLoading] = useState(false);
   const [successRequestId, setSuccessRequestId] = useState<string | null>(null);
   const [lojasLoaded, setLojasLoaded] = useState(false);
+  const [equipeTab, setEquipeTab] = useState('propria');
   
   const [formData, setFormData] = useState<FormData>({
     lojaId: '',
@@ -89,7 +91,6 @@ export default function SolicitacaoForm() {
   // Filtrar lojas baseado na busca
   useEffect(() => {
     if (lojaSearchValue.trim() === '') {
-      // Se vazio, mostrar todas as lojas quando o dropdown está aberto
       if (lojaSearchOpen && lojasLoaded) {
         setFilteredLojas(lojas);
       } else {
@@ -98,34 +99,14 @@ export default function SolicitacaoForm() {
     } else {
       const filtered = lojas.filter(loja =>
         loja.label.toLowerCase().includes(lojaSearchValue.toLowerCase()) ||
-        loja.id.includes(lojaSearchValue)
+        loja.id.toLowerCase().includes(lojaSearchValue.toLowerCase())
       );
       setFilteredLojas(filtered);
     }
-  }, [lojaSearchValue, lojas, lojaSearchOpen, lojasLoaded]);
+  }, [lojaSearchValue, lojaSearchOpen, lojas, lojasLoaded]);
 
-  const handleSelectLoja = (loja: Loja) => {
-    setFormData(prev => ({
-      ...prev,
-      lojaId: loja.id,
-      lojaLabel: loja.label,
-    }));
-    setLojaSearchValue('');
-    setLojaSearchOpen(false);
-    // Limpar erro de loja quando selecionada
-    setErrors(prev => {
-      const newErrors = { ...prev };
-      delete newErrors.lojaId;
-      return newErrors;
-    });
-  };
-
-  const handleFormChange = (field: string, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value,
-    }));
-    // Limpar erro do campo quando usuário começa a digitar
+  const handleFormChange = (field: string, value: any) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
     if (errors[field]) {
       setErrors(prev => {
         const newErrors = { ...prev };
@@ -201,6 +182,7 @@ export default function SolicitacaoForm() {
     if (!formData.lojaId) newErrors.lojaId = 'Loja é obrigatória';
     if (!formData.solicitanteNome) newErrors.solicitanteNome = 'Nome é obrigatório';
     if (!formData.solicitanteTelefone) newErrors.solicitanteTelefone = 'Telefone é obrigatório';
+    // Número do chamado agora é opcional
     if (!formData.tipoEquipe) newErrors.tipoEquipe = 'Tipo de equipe é obrigatório';
     if (formData.tipoEquipe === 'Terceirizada' && !formData.empresaTerceira) {
       newErrors.empresaTerceira = 'Empresa terceira é obrigatória';
@@ -255,14 +237,19 @@ export default function SolicitacaoForm() {
               method: 'POST',
               body: formDataUpload,
             });
-            const uploadData = await uploadResponse.json();
-            foto1Urls.push(uploadData.url);
+
+            if (uploadResponse.ok) {
+              const uploadData = await uploadResponse.json();
+              foto1Urls.push(uploadData.url);
+            } else {
+              foto1Urls.push(undefined);
+            }
           } catch (error) {
             console.error('Erro ao fazer upload da foto 1:', error);
-            foto1Urls.push('');
+            foto1Urls.push(undefined);
           }
         } else {
-          foto1Urls.push('');
+          foto1Urls.push(undefined);
         }
 
         if (material.foto2Preview) {
@@ -275,53 +262,52 @@ export default function SolicitacaoForm() {
               method: 'POST',
               body: formDataUpload,
             });
-            const uploadData = await uploadResponse.json();
-            foto2Urls.push(uploadData.url);
+
+            if (uploadResponse.ok) {
+              const uploadData = await uploadResponse.json();
+              foto2Urls.push(uploadData.url);
+            } else {
+              foto2Urls.push(undefined);
+            }
           } catch (error) {
             console.error('Erro ao fazer upload da foto 2:', error);
-            foto2Urls.push('');
+            foto2Urls.push(undefined);
           }
         } else {
-          foto2Urls.push('');
+          foto2Urls.push(undefined);
         }
       }
 
+      // Enviar para webhook
       const result = await submitMutation.mutateAsync({
         requestId,
         timestampEnvio,
-        honeypot: formData.honeypot,
-        header: {
-          lojaId: formData.lojaId,
-          lojaLabel: formData.lojaLabel,
-          solicitanteNome: formData.solicitanteNome,
-          solicitanteTelefone: formData.solicitanteTelefone,
-          numeroChamado: formData.numeroChamado,
-          tipoEquipe: formData.tipoEquipe,
-          empresaTerceira: formData.empresaTerceira,
-          tipoServico: formData.tipoServico,
-          sistemaAfetado: formData.sistemaAfetado,
-          descricaoGeralServico: formData.descricaoGeralServico,
-        },
-        items: materiais.map(m => ({
-          materialDescricao: m.descricao,
-          materialEspecificacao: m.especificacao || '',
+        lojaId: formData.lojaId,
+        lojaLabel: formData.lojaLabel,
+        solicitanteNome: formData.solicitanteNome,
+        solicitanteTelefone: formData.solicitanteTelefone,
+        numeroChamado: formData.numeroChamado || '',
+        tipoEquipe: formData.tipoEquipe,
+        empresaTerceira: formData.empresaTerceira || '',
+        tipoServico: formData.tipoServico,
+        sistemaAfetado: formData.sistemaAfetado,
+        descricaoGeralServico: formData.descricaoGeralServico,
+        materiais: materiais.map((m, idx) => ({
+          descricao: m.descricao,
+          especificacao: m.especificacao || '',
           quantidade: m.quantidade,
           unidade: m.unidade,
           urgencia: m.urgencia,
+          foto1Url: foto1Urls[idx] || '',
+          foto2Url: foto2Urls[idx] || '',
         })),
-        foto1Urls,
-        foto2Urls,
       });
 
-      if (result.success) {
-        setSuccessRequestId(result.requestId);
-        toast.success('Solicitação enviada com sucesso!');
-      } else {
-        toast.error(result.error || 'Erro ao enviar solicitação');
-      }
-    } catch (error: any) {
+      setSuccessRequestId(result.requestId);
+      toast.success('Solicitação enviada com sucesso!');
+    } catch (error) {
       console.error('Erro ao enviar solicitação:', error);
-      toast.error(error.message || 'Erro ao processar solicitação');
+      toast.error('Erro ao enviar solicitação');
     } finally {
       setLoading(false);
     }
@@ -342,41 +328,30 @@ export default function SolicitacaoForm() {
       descricaoGeralServico: '',
       honeypot: '',
     });
-    setMateriais([
-      { id: '1', descricao: '', quantidade: 1, unidade: 'un', urgencia: 'Média' },
-    ]);
+    setMateriais([{ id: '1', descricao: '', quantidade: 1, unidade: 'un', urgencia: 'Média' }]);
     setErrors({});
   };
 
   if (successRequestId) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: '#e8f4fb' }}>
-        <Card className="w-full max-w-md shadow-lg">
-          <CardContent className="pt-8">
-            <div className="text-center">
-              <CheckCircle className="w-16 h-16 mx-auto mb-4" style={{ color: '#0082C3' }} />
-              <h2 className="text-2xl font-bold mb-2">Solicitação Enviada!</h2>
-              <p className="text-gray-600 mb-6">Sua solicitação foi registrada com sucesso.</p>
-              
-              <div className="bg-gray-100 p-4 rounded-lg mb-6">
-                <p className="text-sm text-gray-600 mb-1">ID da Solicitação:</p>
-                <p className="text-lg font-mono font-bold" style={{ color: '#0082C3' }}>
-                  {successRequestId}
-                </p>
-              </div>
-
-              <p className="text-sm text-gray-600 mb-6">
-                Guarde este ID para acompanhar sua solicitação. O time de Compras entrará em contato em breve.
-              </p>
-
-              <Button
-                onClick={handleNovasolicitacao}
-                className="w-full"
-                style={{ backgroundColor: '#0082C3' }}
-              >
-                Nova Solicitação
-              </Button>
+      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md border-2 border-green-200 bg-white shadow-lg">
+          <CardContent className="pt-8 text-center">
+            <div className="flex justify-center mb-4">
+              <CheckCircle className="w-16 h-16 text-green-500" />
             </div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Solicitação Enviada!</h2>
+            <p className="text-gray-600 mb-4">Sua solicitação foi registrada com sucesso.</p>
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+              <p className="text-sm text-gray-600 mb-1">ID da Solicitação:</p>
+              <p className="text-lg font-mono font-bold text-blue-600">{successRequestId}</p>
+            </div>
+            <Button
+              onClick={handleNovasolicitacao}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              Nova Solicitação
+            </Button>
           </CardContent>
         </Card>
       </div>
@@ -384,12 +359,14 @@ export default function SolicitacaoForm() {
   }
 
   return (
-    <div className="min-h-screen p-4 pb-8" style={{ backgroundColor: '#f5f5f5' }}>
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 p-4 md:p-6">
       <div className="max-w-2xl mx-auto">
         {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold" style={{ color: '#0082C3' }}>Solicitação de Materiais</h1>
-          <p className="text-gray-600">Manutenção e Suporte</p>
+        <div className="mb-8">
+          <h1 className="text-3xl md:text-4xl font-bold" style={{ color: '#0082C3' }}>
+            Solicitação de Materiais
+          </h1>
+          <p className="text-gray-600 mt-1">Manutenção e Suporte</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -404,18 +381,24 @@ export default function SolicitacaoForm() {
             autoComplete="off"
           />
 
-          {/* SEÇÃO 1: DADOS PRINCIPAIS */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Dados Principais</CardTitle>
+          {/* Dados Principais */}
+          <Card className="border-l-4" style={{ borderLeftColor: '#0082C3' }}>
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-2">
+                <Building2 className="w-5 h-5" style={{ color: '#0082C3' }} />
+                <CardTitle>Dados Principais</CardTitle>
+              </div>
               <CardDescription>Informações do solicitante e da loja</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* Loja */}
+              {/* Loja / Cluster */}
               <div>
-                <Label htmlFor="loja">Loja *</Label>
+                <Label htmlFor="loja" className="font-semibold">
+                  Loja / Cluster <span className="text-red-500">*</span>
+                </Label>
                 <div className="relative mt-2">
                   <Input
+                    id="loja"
                     placeholder="Clique para ver todas as lojas ou digite para buscar..."
                     value={lojaSearchValue}
                     onChange={(e) => setLojaSearchValue(e.target.value)}
@@ -424,56 +407,52 @@ export default function SolicitacaoForm() {
                     className={errors.lojaId ? 'border-red-500' : ''}
                   />
                   {lojaSearchOpen && filteredLojas.length > 0 && (
-                    <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-10 max-h-64 overflow-y-auto">
-                      <div className="sticky top-0 bg-gray-50 px-4 py-2 border-b text-xs text-gray-600 font-semibold">
-                        {filteredLojas.length} loja{filteredLojas.length !== 1 ? 's' : ''} disponível{filteredLojas.length !== 1 ? 's' : ''}
-                      </div>
+                    <div className="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-md shadow-lg z-10 max-h-48 overflow-y-auto mt-1">
                       {filteredLojas.map(loja => (
                         <button
                           key={loja.id}
                           type="button"
-                          onClick={() => handleSelectLoja(loja)}
-                          className="w-full text-left px-4 py-2 hover:bg-blue-50 border-b last:border-b-0 transition-colors"
+                          onClick={() => {
+                            handleFormChange('lojaId', loja.id);
+                            handleFormChange('lojaLabel', loja.label);
+                            setLojaSearchValue('');
+                            setLojaSearchOpen(false);
+                          }}
+                          className="w-full text-left px-4 py-2 hover:bg-blue-50 border-b last:border-b-0 text-sm"
                         >
-                          <div className="font-semibold text-sm">{loja.id}</div>
-                          <div className="text-xs text-gray-600">{loja.label}</div>
+                          <div className="font-semibold">{loja.label}</div>
+                          <div className="text-xs text-gray-500">{loja.id}</div>
                         </button>
                       ))}
                     </div>
                   )}
-                  {lojaSearchOpen && filteredLojas.length === 0 && lojaSearchValue.trim() === '' && !lojasLoaded && (
-                    <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-10 p-3 text-center text-gray-500 text-sm">
-                      Carregando lojas...
-                    </div>
-                  )}
-                  {lojaSearchOpen && filteredLojas.length === 0 && lojaSearchValue.trim() !== '' && (
-                    <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-10 p-3 text-center text-gray-500 text-sm">
-                      Nenhuma loja encontrada para "{lojaSearchValue}"
-                    </div>
-                  )}
                 </div>
-                {errors.lojaId && <p className="text-red-500 text-sm mt-1">{errors.lojaId}</p>}
                 {formData.lojaId && (
-                  <p className="text-sm text-green-600 mt-1">✓ Loja selecionada: {formData.lojaLabel}</p>
+                  <p className="text-sm text-green-600 mt-1">✓ {formData.lojaLabel}</p>
                 )}
+                {errors.lojaId && <p className="text-sm text-red-500 mt-1">{errors.lojaId}</p>}
               </div>
 
               {/* Nome do Solicitante */}
               <div>
-                <Label htmlFor="solicitanteNome">Nome do Solicitante *</Label>
+                <Label htmlFor="nome" className="font-semibold">
+                  Nome do Solicitante <span className="text-red-500">*</span>
+                </Label>
                 <Input
-                  id="solicitanteNome"
+                  id="nome"
                   placeholder="Digite seu nome completo"
                   value={formData.solicitanteNome}
                   onChange={(e) => handleFormChange('solicitanteNome', e.target.value)}
                   className={errors.solicitanteNome ? 'border-red-500 mt-2' : 'mt-2'}
                 />
-                {errors.solicitanteNome && <p className="text-red-500 text-sm mt-1">{errors.solicitanteNome}</p>}
+                {errors.solicitanteNome && <p className="text-sm text-red-500 mt-1">{errors.solicitanteNome}</p>}
               </div>
 
-              {/* Telefone */}
+              {/* Telefone / WhatsApp */}
               <div>
-                <Label htmlFor="telefone">Telefone / WhatsApp *</Label>
+                <Label htmlFor="telefone" className="font-semibold">
+                  Telefone / WhatsApp <span className="text-red-500">*</span>
+                </Label>
                 <Input
                   id="telefone"
                   placeholder="(11) 99999-9999"
@@ -481,12 +460,14 @@ export default function SolicitacaoForm() {
                   onChange={(e) => handleFormChange('solicitanteTelefone', e.target.value)}
                   className={errors.solicitanteTelefone ? 'border-red-500 mt-2' : 'mt-2'}
                 />
-                {errors.solicitanteTelefone && <p className="text-red-500 text-sm mt-1">{errors.solicitanteTelefone}</p>}
+                {errors.solicitanteTelefone && <p className="text-sm text-red-500 mt-1">{errors.solicitanteTelefone}</p>}
               </div>
 
-              {/* Número do Chamado */}
+              {/* Número do Chamado (Opcional) */}
               <div>
-                <Label htmlFor="chamado">Número do Chamado</Label>
+                <Label htmlFor="chamado" className="font-semibold">
+                  Número do Chamado <span className="text-gray-400 text-sm">(opcional)</span>
+                </Label>
                 <Input
                   id="chamado"
                   placeholder="Ex: CHM-2026-001"
@@ -498,49 +479,96 @@ export default function SolicitacaoForm() {
             </CardContent>
           </Card>
 
-          {/* SEÇÃO 2: EQUIPE E SERVIÇO */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Equipe e Serviço</CardTitle>
+          {/* Equipe e Serviço */}
+          <Card className="border-l-4" style={{ borderLeftColor: '#0082C3' }}>
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-2">
+                <Users className="w-5 h-5" style={{ color: '#0082C3' }} />
+                <CardTitle>Equipe e Serviço</CardTitle>
+              </div>
               <CardDescription>Informações sobre o tipo de serviço</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Tipo de Equipe */}
-              <div>
-                <Label htmlFor="tipoEquipe">Tipo de Equipe *</Label>
-                <Select value={formData.tipoEquipe} onValueChange={(value) => handleFormChange('tipoEquipe', value)}>
-                  <SelectTrigger className={`mt-2 ${errors.tipoEquipe ? 'border-red-500' : ''}`}>
-                    <SelectValue placeholder="Selecione..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {TIPOS_EQUIPE.map(tipo => (
-                      <SelectItem key={tipo} value={tipo}>{tipo}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {errors.tipoEquipe && <p className="text-red-500 text-sm mt-1">{errors.tipoEquipe}</p>}
-              </div>
+            <CardContent>
+              <Tabs value={equipeTab} onValueChange={setEquipeTab} className="w-full">
+                <TabsList className="grid w-full grid-cols-2 mb-4">
+                  <TabsTrigger value="propria">Equipe Própria</TabsTrigger>
+                  <TabsTrigger value="terceirizada">Terceirizada</TabsTrigger>
+                </TabsList>
 
-              {/* Empresa Terceira (condicional) */}
-              {formData.tipoEquipe === 'Terceirizada' && (
-                <div>
-                  <Label htmlFor="empresaTerceira">Empresa Terceira *</Label>
-                  <Input
-                    id="empresaTerceira"
-                    placeholder="Nome da empresa terceirizada"
-                    value={formData.empresaTerceira}
-                    onChange={(e) => handleFormChange('empresaTerceira', e.target.value)}
-                    className={`mt-2 ${errors.empresaTerceira ? 'border-red-500' : ''}`}
-                  />
-                  {errors.empresaTerceira && <p className="text-red-500 text-sm mt-1">{errors.empresaTerceira}</p>}
-                </div>
-              )}
+                <TabsContent value="propria" className="space-y-4">
+                  <div>
+                    <Label htmlFor="tipo-equipe" className="font-semibold">
+                      Tipo de Equipe <span className="text-red-500">*</span>
+                    </Label>
+                    <Select
+                      value={formData.tipoEquipe}
+                      onValueChange={(value) => {
+                        handleFormChange('tipoEquipe', value);
+                        if (value !== 'Terceirizada') {
+                          handleFormChange('empresaTerceira', '');
+                        }
+                      }}
+                    >
+                      <SelectTrigger id="tipo-equipe" className={`mt-2 ${errors.tipoEquipe ? 'border-red-500' : ''}`}>
+                        <SelectValue placeholder="Selecione..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {TIPOS_EQUIPE.map(tipo => (
+                          <SelectItem key={tipo} value={tipo}>{tipo}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {errors.tipoEquipe && <p className="text-sm text-red-500 mt-1">{errors.tipoEquipe}</p>}
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="terceirizada" className="space-y-4">
+                  <div>
+                    <Label htmlFor="tipo-equipe-t" className="font-semibold">
+                      Tipo de Equipe <span className="text-red-500">*</span>
+                    </Label>
+                    <Select
+                      value={formData.tipoEquipe}
+                      onValueChange={(value) => handleFormChange('tipoEquipe', value)}
+                    >
+                      <SelectTrigger id="tipo-equipe-t" className={`mt-2 ${errors.tipoEquipe ? 'border-red-500' : ''}`}>
+                        <SelectValue placeholder="Selecione..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {TIPOS_EQUIPE.map(tipo => (
+                          <SelectItem key={tipo} value={tipo}>{tipo}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {errors.tipoEquipe && <p className="text-sm text-red-500 mt-1">{errors.tipoEquipe}</p>}
+                  </div>
+
+                  <div>
+                    <Label htmlFor="empresa" className="font-semibold">
+                      Empresa Terceira <span className="text-red-500">*</span>
+                    </Label>
+                    <Input
+                      id="empresa"
+                      placeholder="Nome da empresa terceirizada"
+                      value={formData.empresaTerceira}
+                      onChange={(e) => handleFormChange('empresaTerceira', e.target.value)}
+                      className={`mt-2 ${errors.empresaTerceira ? 'border-red-500' : ''}`}
+                    />
+                    {errors.empresaTerceira && <p className="text-sm text-red-500 mt-1">{errors.empresaTerceira}</p>}
+                  </div>
+                </TabsContent>
+              </Tabs>
 
               {/* Tipo de Serviço */}
-              <div>
-                <Label htmlFor="tipoServico">Tipo de Serviço *</Label>
-                <Select value={formData.tipoServico} onValueChange={(value) => handleFormChange('tipoServico', value)}>
-                  <SelectTrigger className={`mt-2 ${errors.tipoServico ? 'border-red-500' : ''}`}>
+              <div className="mt-4">
+                <Label htmlFor="tipo-servico" className="font-semibold">
+                  Tipo de Serviço <span className="text-red-500">*</span>
+                </Label>
+                <Select
+                  value={formData.tipoServico}
+                  onValueChange={(value) => handleFormChange('tipoServico', value)}
+                >
+                  <SelectTrigger id="tipo-servico" className={`mt-2 ${errors.tipoServico ? 'border-red-500' : ''}`}>
                     <SelectValue placeholder="Selecione..." />
                   </SelectTrigger>
                   <SelectContent>
@@ -549,14 +577,19 @@ export default function SolicitacaoForm() {
                     ))}
                   </SelectContent>
                 </Select>
-                {errors.tipoServico && <p className="text-red-500 text-sm mt-1">{errors.tipoServico}</p>}
+                {errors.tipoServico && <p className="text-sm text-red-500 mt-1">{errors.tipoServico}</p>}
               </div>
 
               {/* Sistema Afetado */}
-              <div>
-                <Label htmlFor="sistemaAfetado">Sistema Afetado *</Label>
-                <Select value={formData.sistemaAfetado} onValueChange={(value) => handleFormChange('sistemaAfetado', value)}>
-                  <SelectTrigger className={`mt-2 ${errors.sistemaAfetado ? 'border-red-500' : ''}`}>
+              <div className="mt-4">
+                <Label htmlFor="sistema" className="font-semibold">
+                  Sistema Afetado <span className="text-red-500">*</span>
+                </Label>
+                <Select
+                  value={formData.sistemaAfetado}
+                  onValueChange={(value) => handleFormChange('sistemaAfetado', value)}
+                >
+                  <SelectTrigger id="sistema" className={`mt-2 ${errors.sistemaAfetado ? 'border-red-500' : ''}`}>
                     <SelectValue placeholder="Selecione..." />
                   </SelectTrigger>
                   <SelectContent>
@@ -565,196 +598,282 @@ export default function SolicitacaoForm() {
                     ))}
                   </SelectContent>
                 </Select>
-                {errors.sistemaAfetado && <p className="text-red-500 text-sm mt-1">{errors.sistemaAfetado}</p>}
+                {errors.sistemaAfetado && <p className="text-sm text-red-500 mt-1">{errors.sistemaAfetado}</p>}
               </div>
 
-              {/* Descrição Geral */}
-              <div>
-                <Label htmlFor="descricao">Descrição Geral do Serviço *</Label>
+              {/* Descrição Geral do Serviço */}
+              <div className="mt-4">
+                <Label htmlFor="descricao" className="font-semibold">
+                  Descrição Geral do Serviço <span className="text-red-500">*</span>
+                </Label>
                 <Textarea
                   id="descricao"
-                  placeholder="Descreva o serviço a ser realizado..."
+                  placeholder="Descreva o serviço e o problema a ser resolvido..."
                   value={formData.descricaoGeralServico}
                   onChange={(e) => handleFormChange('descricaoGeralServico', e.target.value)}
                   className={`mt-2 ${errors.descricaoGeralServico ? 'border-red-500' : ''}`}
                   rows={3}
                 />
-                {errors.descricaoGeralServico && <p className="text-red-500 text-sm mt-1">{errors.descricaoGeralServico}</p>}
+                {errors.descricaoGeralServico && <p className="text-sm text-red-500 mt-1">{errors.descricaoGeralServico}</p>}
               </div>
             </CardContent>
           </Card>
 
-          {/* SEÇÃO 3: MATERIAIS */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Materiais Solicitados</CardTitle>
-              <CardDescription>Adicione os materiais necessários para o serviço</CardDescription>
+          {/* Materiais Solicitados */}
+          <Card className="border-l-4" style={{ borderLeftColor: '#0082C3' }}>
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-2">
+                <Package className="w-5 h-5" style={{ color: '#0082C3' }} />
+                <CardTitle>Materiais Solicitados</CardTitle>
+              </div>
+              <CardDescription>Adicione os materiais necessários</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {errors.materiais && <p className="text-red-500 text-sm">{errors.materiais}</p>}
-              
-              {materiais.map((material, index) => (
-                <div key={material.id} className="border rounded-lg p-4 space-y-3 bg-gray-50">
-                  <div className="flex justify-between items-center mb-3">
-                    <h4 className="font-semibold text-sm">Material {index + 1}</h4>
-                    {materiais.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveMaterial(material.id)}
-                        className="text-red-500 hover:text-red-700"
-                      >
-                        <Trash2 size={18} />
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Descrição */}
-                  <div>
-                    <Label className="text-xs">Descrição *</Label>
-                    <Input
-                      placeholder="Ex: Filtro de ar"
-                      value={material.descricao}
-                      onChange={(e) => handleMaterialChange(material.id, 'descricao', e.target.value)}
-                      className="mt-1"
-                    />
-                  </div>
-
-                  {/* Especificação */}
-                  <div>
-                    <Label className="text-xs">Especificação</Label>
-                    <Input
-                      placeholder="Ex: Modelo XYZ, Tamanho 10x10"
-                      value={material.especificacao || ''}
-                      onChange={(e) => handleMaterialChange(material.id, 'especificacao', e.target.value)}
-                      className="mt-1"
-                    />
-                  </div>
-
-                  {/* Quantidade e Unidade */}
-                  <div className="grid grid-cols-2 gap-2">
+              {materiais.map((material, idx) => (
+                <Card key={material.id} className="bg-gray-50 border">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-base">Material {idx + 1}</CardTitle>
+                      {materiais.length > 1 && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleRemoveMaterial(material.id)}
+                          className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {/* Descrição do Material */}
                     <div>
-                      <Label className="text-xs">Quantidade *</Label>
+                      <Label className="font-semibold text-sm">Descrição do Material <span className="text-red-500">*</span></Label>
                       <Input
-                        type="number"
-                        min="1"
-                        value={material.quantidade}
-                        onChange={(e) => handleMaterialChange(material.id, 'quantidade', parseInt(e.target.value) || 1)}
+                        placeholder="Ex: Descrevedor Especial 10A"
+                        value={material.descricao}
+                        onChange={(e) => handleMaterialChange(material.id, 'descricao', e.target.value)}
                         className="mt-1"
                       />
                     </div>
+
+                    {/* Especificação */}
                     <div>
-                      <Label className="text-xs">Unidade *</Label>
-                      <Select value={material.unidade} onValueChange={(value) => handleMaterialChange(material.id, 'unidade', value)}>
+                      <Label className="font-semibold text-sm">Especificação (Marca, modelo, etc.)</Label>
+                      <Input
+                        placeholder="Ex: Siemens, modelo XYZ"
+                        value={material.especificacao || ''}
+                        onChange={(e) => handleMaterialChange(material.id, 'especificacao', e.target.value)}
+                        className="mt-1"
+                      />
+                    </div>
+
+                    {/* Quantidade e Unidade */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <Label className="font-semibold text-sm">Quantidade <span className="text-red-500">*</span></Label>
+                        <Input
+                          type="number"
+                          min="1"
+                          value={material.quantidade}
+                          onChange={(e) => handleMaterialChange(material.id, 'quantidade', parseInt(e.target.value) || 1)}
+                          className="mt-1"
+                        />
+                      </div>
+                      <div>
+                        <Label className="font-semibold text-sm">Unidade <span className="text-red-500">*</span></Label>
+                        <Select
+                          value={material.unidade}
+                          onValueChange={(value) => handleMaterialChange(material.id, 'unidade', value)}
+                        >
+                          <SelectTrigger className="mt-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {UNIDADES.map(u => (
+                              <SelectItem key={u} value={u}>{u}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    {/* Urgência */}
+                    <div>
+                      <Label className="font-semibold text-sm">Urgência <span className="text-red-500">*</span></Label>
+                      <Select
+                        value={material.urgencia}
+                        onValueChange={(value) => handleMaterialChange(material.id, 'urgencia', value)}
+                      >
                         <SelectTrigger className="mt-1">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          {UNIDADES.map(unidade => (
-                            <SelectItem key={unidade} value={unidade}>{unidade}</SelectItem>
+                          {URGENCIAS.map(u => (
+                            <SelectItem key={u} value={u}>{u}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
                     </div>
-                  </div>
 
-                  {/* Urgência */}
-                  <div>
-                    <Label className="text-xs">Urgência *</Label>
-                    <Select value={material.urgencia} onValueChange={(value) => handleMaterialChange(material.id, 'urgencia', value)}>
-                      <SelectTrigger className="mt-1">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {URGENCIAS.map(urgencia => (
-                          <SelectItem key={urgencia} value={urgencia}>{urgencia}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                    {/* Fotos */}
+                    <div className="border-t pt-3 mt-3">
+                      <Label className="font-semibold text-sm mb-3 block">Fotos do Material (até 2)</Label>
+                      <div className="grid grid-cols-2 gap-3">
+                        {[1, 2].map((fotoNum) => {
+                          const fotoKey = fotoNum === 1 ? 'foto1Preview' : 'foto2Preview';
+                          const preview = material[fotoKey];
+                          const isCompressing = compressingMaterial === `${material.id}-${fotoNum}`;
 
-                  {/* Fotos */}
-                  <div className="grid grid-cols-2 gap-2">
-                    {[1, 2].map((fotoIndex) => (
-                      <div key={`foto${fotoIndex}`}>
-                        <Label className="text-xs">Foto {fotoIndex} (opcional)</Label>
-                        <div className="mt-1 space-y-2">
-                          {/* Opções de upload */}
-                          <div className="flex gap-2">
-                            {/* Galeria */}
-                            <div className="flex-1 border-2 border-dashed rounded-lg p-2 text-center cursor-pointer hover:bg-blue-50">
-                              <input
-                                type="file"
-                                accept="image/*"
-                                onChange={(e) => {
-                                  const file = e.target.files?.[0];
-                                  if (file) handleFotoChange(material.id, fotoIndex as 1 | 2, file);
-                                }}
-                                className="hidden"
-                                id={`foto${fotoIndex}-${material.id}`}
-                              />
-                              <label htmlFor={`foto${fotoIndex}-${material.id}`} className="cursor-pointer block">
-                                <Upload size={14} className="mx-auto mb-1" />
-                                <span className="text-xs">Galeria</span>
-                              </label>
+                          return (
+                            <div key={fotoNum} className="border-2 border-dashed border-gray-300 rounded-lg p-3 text-center">
+                              {preview ? (
+                                <div className="space-y-2">
+                                  <img
+                                    src={preview}
+                                    alt={`Foto ${fotoNum}`}
+                                    className="w-full h-24 object-cover rounded"
+                                  />
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleMaterialChange(material.id, fotoKey as string, undefined)}
+                                    className="w-full"
+                                  >
+                                    Remover
+                                  </Button>
+                                </div>
+                              ) : (
+                                <div className="space-y-2">
+                                  <div className="flex justify-center gap-2">
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => setCameraTarget({ materialId: material.id, fotoIndex: fotoNum as 1 | 2 })}
+                                      disabled={isCompressing}
+                                      className="flex-1"
+                                    >
+                                      <Camera className="w-4 h-4 mr-1" />
+                                      Câmera
+                                    </Button>
+                                    <label className="flex-1">
+                                      <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        disabled={isCompressing}
+                                        className="w-full"
+                                        asChild
+                                      >
+                                        <span>
+                                          <Upload className="w-4 h-4 mr-1" />
+                                          Galeria
+                                        </span>
+                                      </Button>
+                                      <input
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={(e) => {
+                                          const file = e.target.files?.[0];
+                                          if (file) handleFotoChange(material.id, fotoNum as 1 | 2, file);
+                                        }}
+                                        className="hidden"
+                                      />
+                                    </label>
+                                  </div>
+                                  {isCompressing && (
+                                    <div className="flex items-center justify-center gap-2 text-sm text-blue-600">
+                                      <Loader2 className="w-4 h-4 animate-spin" />
+                                      Comprimindo...
+                                    </div>
+                                  )}
+                                </div>
+                              )}
                             </div>
-                            {/* Câmera */}
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setCameraTarget({ materialId: material.id, fotoIndex: fotoIndex as 1 | 2 });
-                                setCameraOpen(true);
-                              }}
-                              className="flex-1 border-2 border-dashed border-blue-400 rounded-lg p-2 text-center cursor-pointer hover:bg-blue-50 flex flex-col items-center justify-center"
-                            >
-                              <Camera size={14} className="mb-1" />
-                              <span className="text-xs">Câmera</span>
-                            </button>
-                          </div>
-                        </div>
-                        {(fotoIndex === 1 ? material.foto1Preview : material.foto2Preview) && (
-                          <img src={fotoIndex === 1 ? material.foto1Preview : material.foto2Preview} alt={`Preview ${fotoIndex}`} className="mt-2 w-full h-20 object-cover rounded" />
-                        )}
+                          );
+                        })}
                       </div>
-                    ))}
-                  </div>
-                </div>
+                    </div>
+                  </CardContent>
+                </Card>
               ))}
+
+              {errors.materiais && (
+                <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <AlertCircle className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" />
+                  <p className="text-sm text-red-700">{errors.materiais}</p>
+                </div>
+              )}
 
               <Button
                 type="button"
                 onClick={handleAddMaterial}
                 variant="outline"
-                className="w-full"
+                className="w-full border-dashed"
               >
-                <Plus size={18} className="mr-2" />
+                <Plus className="w-4 h-4 mr-2" />
                 Adicionar Material
               </Button>
             </CardContent>
           </Card>
 
-          {/* Botão Enviar */}
-          <Button
-            type="submit"
-            disabled={loading}
-            className="w-full py-6 text-lg font-semibold"
-            style={{ backgroundColor: '#0082C3' }}
-          >
-            {loading ? 'Enviando...' : 'Enviar Solicitação'}
-          </Button>
+          {/* Botões de Ação */}
+          <div className="flex gap-3">
+            <Button
+              type="submit"
+              disabled={loading}
+              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-6 text-lg"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                  Enviando...
+                </>
+              ) : (
+                'Enviar Solicitação'
+              )}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="flex-1 border-green-500 text-green-700 hover:bg-green-50 font-semibold py-6 text-lg"
+              onClick={() => {
+                handleNovasolicitacao();
+                toast.success('Formulário limpo');
+              }}
+            >
+              Salvar
+            </Button>
+          </div>
         </form>
       </div>
 
-      {/* Modal de Captura de Câmera */}
+      {/* Camera Capture Modal */}
       {cameraOpen && cameraTarget && (
         <CameraCapture
-          onCapture={(blob) => {
-            const file = new File([blob], `photo-${Date.now()}.jpg`, { type: 'image/jpeg' });
-            handleFotoChange(cameraTarget.materialId, cameraTarget.fotoIndex, file);
+          onCapture={(preview) => {
+            handleFotoChange(cameraTarget.materialId, cameraTarget.fotoIndex, preview as any);
+            setCameraOpen(false);
+            setCameraTarget(null);
           }}
           onClose={() => {
             setCameraOpen(false);
             setCameraTarget(null);
           }}
+        />
+      )}
+
+      {cameraTarget && !cameraOpen && (
+        <CameraCapture
+          onCapture={(preview) => {
+            handleFotoChange(cameraTarget.materialId, cameraTarget.fotoIndex, preview as any);
+            setCameraTarget(null);
+          }}
+          onClose={() => setCameraTarget(null)}
         />
       )}
     </div>
