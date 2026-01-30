@@ -44,6 +44,9 @@ export default function SolicitacaoForm() {
     },
   ]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showDiagnosticModal, setShowDiagnosticModal] = useState(false);
+  const [diagnosticResult, setDiagnosticResult] = useState<any>(null);
+  const [isDiagnosing, setIsDiagnosing] = useState(false);
 
   // Refs para inputs de câmera e galeria
   const fileInputRefs = useRef<Record<string, Record<string, HTMLInputElement | null>>>({});
@@ -60,6 +63,21 @@ export default function SolicitacaoForm() {
     descricao_geral_servico: "",
     honeypot: "",
   });
+
+  // Função para diagnosticar webhook
+  const handleDiagnoseWebhook = async () => {
+    setIsDiagnosing(true);
+    try {
+      const result = await trpc.webhook.diagnose.useQuery().promise;
+      setDiagnosticResult(result);
+      setShowDiagnosticModal(true);
+    } catch (error) {
+      toast.error("Erro ao diagnosticar webhook");
+      console.error(error);
+    } finally {
+      setIsDiagnosing(false);
+    }
+  };
 
   // Carrega lista de lojas
   useEffect(() => {
@@ -878,6 +896,99 @@ export default function SolicitacaoForm() {
             )}
           </Button>
         </form>
+
+        {/* Modal de Diagnóstico */}
+        {showDiagnosticModal && diagnosticResult && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <Card className="w-full max-w-2xl max-h-96 overflow-y-auto">
+              <div className="p-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-xl font-bold">Diagnóstico do Webhook</h2>
+                  <button
+                    onClick={() => setShowDiagnosticModal(false)}
+                    className="text-gray-500 hover:text-gray-700"
+                  >
+                    <X size={24} />
+                  </button>
+                </div>
+
+                <div className="space-y-3 text-sm">
+                  <div>
+                    <p className="font-semibold text-gray-700">URL (mascarada):</p>
+                    <p className="text-gray-600 break-all font-mono">{diagnosticResult.urlMasked}</p>
+                  </div>
+
+                  {diagnosticResult.status !== null && (
+                    <div>
+                      <p className="font-semibold text-gray-700">Status HTTP:</p>
+                      <p className="text-gray-600">{diagnosticResult.status}</p>
+                    </div>
+                  )}
+
+                  {diagnosticResult.contentType && (
+                    <div>
+                      <p className="font-semibold text-gray-700">Content-Type:</p>
+                      <p className="text-gray-600">{diagnosticResult.contentType}</p>
+                    </div>
+                  )}
+
+                  {diagnosticResult.isHtml && (
+                    <div className="bg-red-50 border border-red-200 p-3 rounded">
+                      <p className="font-semibold text-red-700">❌ Webhook retornou HTML</p>
+                      <p className="text-red-600 text-xs mt-1">
+                        Provável causa: Apps Script não está publicado como Web App público (Anyone) ou URL incorreta.
+                      </p>
+                    </div>
+                  )}
+
+                  {diagnosticResult.parsedJson && (
+                    <div>
+                      <p className="font-semibold text-gray-700">Resposta JSON:</p>
+                      <pre className="bg-gray-100 p-2 rounded text-xs overflow-x-auto">
+                        {JSON.stringify(diagnosticResult.parsedJson, null, 2)}
+                      </pre>
+                    </div>
+                  )}
+
+                  {diagnosticResult.bodySnippet && (
+                    <div>
+                      <p className="font-semibold text-gray-700">Body (primeiros 500 chars):</p>
+                      <pre className="bg-gray-100 p-2 rounded text-xs overflow-x-auto">
+                        {diagnosticResult.bodySnippet}
+                      </pre>
+                    </div>
+                  )}
+
+                  {diagnosticResult.error && (
+                    <div className="bg-yellow-50 border border-yellow-200 p-3 rounded">
+                      <p className="font-semibold text-yellow-700">⚠️ Erro:</p>
+                      <p className="text-yellow-600 text-xs mt-1">{diagnosticResult.error}</p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="mt-4 flex gap-2">
+                  <Button
+                    onClick={() => {
+                      navigator.clipboard.writeText(JSON.stringify(diagnosticResult, null, 2));
+                      toast.success("Diagnóstico copiado para clipboard");
+                    }}
+                    variant="outline"
+                    className="flex-1"
+                  >
+                    Copiar Resultado
+                  </Button>
+                  <Button
+                    onClick={() => setShowDiagnosticModal(false)}
+                    className="flex-1"
+                  >
+                    Fechar
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          </div>
+        )}
       </div>
     </div>
   );

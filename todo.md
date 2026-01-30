@@ -55,3 +55,17 @@
 
 ## Correções Sprint 3
 - [x] Corrigir validação de loja_id para aceitar 0 (ESCRITÓRIO)
+
+
+## Sprint 4 - Integração Webhook Completa
+- [x] Validar URL do webhook no startup (deve terminar com /exec)
+- [x] Criar serviço de diagnóstico (webhookDiagnostic.ts)
+- [x] Criar endpoint tRPC /api/webhook/diagnose
+- [x] Melhorar logs com status, content-type, body snippet
+- [x] Implementar retry controlado (1 retry com 800ms delay)
+- [x] Adicionar modal de diagnóstico no frontend
+- [x] Adicionar botão "Diagnosticar Webhook" em caso de erro
+- [x] Melhorar mensagens de erro com detalhes específicos
+- [ ] Testar diagnóstico com webhook real
+- [ ] Testar envio com webhook real funcionando
+- [ ] Testar retry em caso de falha de rede
