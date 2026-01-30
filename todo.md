@@ -40,15 +40,15 @@
 - [ ] Publicar app
 - [ ] Verificar integração com webhook
 
-
 ## Correções e Melhorias (Sprint 2)
-- [x] Remover uso de Buffer do frontend
+- [x] Remover uso de Buffer do frontend (Uint8Array nativo)
 - [x] Implementar upload via tRPC para endpoint de upload
 - [x] Adicionar suporte a câmera (capture="environment")
 - [x] Adicionar suporte a galeria (input file normal)
 - [x] Implementar preview de fotos com URL.createObjectURL
 - [x] Adicionar validação de tipo e tamanho no frontend
 - [x] Atualizar README com instruções de câmera/galeria
-- [ ] Testar envio sem fotos
-- [ ] Testar envio com foto da câmera
-- [ ] Testar envio com foto da galeria
+- [x] Implementar modo mock para testes sem webhook real
+- [x] Adicionar instruções de teste com USE_MOCK_WEBHOOK
+- [ ] Testar envio com modo mock ativado
+- [ ] Testar envio com webhook real (após configurar URL)

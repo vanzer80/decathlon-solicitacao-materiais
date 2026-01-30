@@ -331,3 +331,56 @@ O app não usa Buffer no frontend (evita problemas de compatibilidade com navega
 - Validação de tamanho (máx 5MB)
 - URLs de fotos são públicas (sem autenticação)
 - Nenhum dado sensível é armazenado nas fotos
+
+
+## 🧪 Teste com Modo Mock (Sem Webhook Real)
+
+Para testar a aplicação sem configurar o webhook do Google Apps Script, use o modo mock:
+
+### Ativar Modo Mock
+
+Defina a variável de ambiente `USE_MOCK_WEBHOOK=true`:
+
+```bash
+# No terminal, antes de rodar o app
+export USE_MOCK_WEBHOOK=true
+pnpm dev
+```
+
+Ou crie um arquivo `.env.local` na raiz do projeto:
+
+```env
+USE_MOCK_WEBHOOK=true
+WEBHOOK_URL=https://script.google.com/macros/s/AKfycby9oLYJI9mJqSDOEi6kQQELU7naTfjpesQIYyfRvS8/exec
+WEBHOOK_TOKEN=DECATHLON-2026
+```
+
+### Fluxo em Modo Mock
+
+1. Preencha o formulário normalmente
+2. Clique em "Enviar Solicitação"
+3. O app simula uma resposta bem-sucedida do webhook
+4. Exibe a tela de sucesso com Request_ID
+5. **Nenhuma solicitação é enviada para o Google Apps Script**
+
+### Quando Desativar Modo Mock
+
+Quando tiver a URL correta do webhook do Google Apps Script:
+
+1. Publique o Apps Script como Web App
+2. Copie a URL (deve terminar com `/exec`)
+3. Configure as variáveis de ambiente:
+   - `WEBHOOK_URL`: URL do seu Apps Script
+   - `WEBHOOK_TOKEN`: Token de autenticação
+   - `USE_MOCK_WEBHOOK=false` (ou remova a variável)
+4. Reinicie o servidor: `pnpm dev`
+
+### Verificar Modo Ativo
+
+Abra o console do navegador (F12) e procure por:
+
+```
+[Webhook] Mock mode - returning success
+```
+
+Se ver essa mensagem, o modo mock está ativo.

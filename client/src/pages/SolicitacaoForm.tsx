@@ -245,9 +245,10 @@ export default function SolicitacaoForm() {
           if (material.foto1) {
             try {
               const arrayBuffer = await material.foto1.arrayBuffer();
+              const uint8Array = new Uint8Array(arrayBuffer);
               const result = await uploadMutation.mutateAsync({
                 fileName: `foto1-${material.id}-${Date.now()}`,
-                fileData: Buffer.from(arrayBuffer),
+                fileData: uint8Array,
                 mimeType: material.foto1.type || "image/jpeg",
               });
               foto1_url = result.url || "";
@@ -260,9 +261,10 @@ export default function SolicitacaoForm() {
           if (material.foto2) {
             try {
               const arrayBuffer = await material.foto2.arrayBuffer();
+              const uint8Array = new Uint8Array(arrayBuffer);
               const result = await uploadMutation.mutateAsync({
                 fileName: `foto2-${material.id}-${Date.now()}`,
-                fileData: Buffer.from(arrayBuffer),
+                fileData: uint8Array,
                 mimeType: material.foto2.type || "image/jpeg",
               });
               foto2_url = result.url || "";

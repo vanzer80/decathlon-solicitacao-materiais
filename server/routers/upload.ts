@@ -10,7 +10,7 @@ export const uploadRouter = router({
     .input(
       z.object({
         fileName: z.string(),
-        fileData: z.instanceof(Buffer),
+        fileData: z.instanceof(Uint8Array),
         mimeType: z.string(),
       })
     )

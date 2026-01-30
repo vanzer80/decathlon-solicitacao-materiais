@@ -13,7 +13,7 @@ export interface UploadResult {
  * Valida e faz upload de uma foto
  */
 export async function uploadPhoto(
-  fileBuffer: Buffer,
+  fileBuffer: Uint8Array | Buffer,
   mimeType: string,
   fileName: string
 ): Promise<UploadResult> {
