@@ -298,10 +298,10 @@ export default function SolicitacaoForm() {
         />
 
         {/* SEÇÃO 1: DADOS PRINCIPAIS */}
-        <Card className="mb-6 border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+        <Card className="mb-6 border border-slate-200 shadow-sm hover:shadow-lg hover:border-blue-200 transition-all duration-200">
           <div className="p-6">
             <div className="flex items-center gap-3 mb-6">
-              <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-600 text-white font-bold text-sm">
+              <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-600 text-white font-bold text-sm shadow-md">
                 1
               </div>
               <h2 className="text-lg font-semibold text-slate-900">Dados Principais</h2>
@@ -319,7 +319,7 @@ export default function SolicitacaoForm() {
                     placeholder="Pesquise a loja..."
                     value={searchLoja}
                     onChange={(e) => setSearchLoja(e.target.value)}
-                    className="w-full h-11 text-sm border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full h-11 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 focus:border-blue-500 transition-all duration-200"
                   />
                   {searchLoja && filteredLojas.length > 0 && (
                     <div className="absolute top-full left-0 right-0 bg-white border border-slate-300 rounded-lg shadow-lg z-10 max-h-48 overflow-y-auto mt-2">
@@ -357,7 +357,7 @@ export default function SolicitacaoForm() {
                   placeholder="Seu nome completo"
                   value={formData.solicitante_nome}
                   onChange={(e) => setFormData({ ...formData, solicitante_nome: e.target.value })}
-                  className="h-11 text-sm border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="h-11 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 focus:border-blue-500 transition-all duration-200"
                 />
               </div>
 
@@ -367,25 +367,25 @@ export default function SolicitacaoForm() {
                   <Label className="text-sm font-medium text-slate-700 mb-2 block">
                     Telefone / WhatsApp
                   </Label>
-                  <Input
-                    type="tel"
-                    placeholder="(11) 99999-9999"
-                    value={formData.solicitante_telefone}
-                    onChange={(e) => setFormData({ ...formData, solicitante_telefone: e.target.value })}
-                    className="h-11 text-sm border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
+                <Input
+                  type="tel"
+                  placeholder="(11) 99999-9999"
+                  value={formData.solicitante_telefone}
+                  onChange={(e) => setFormData({ ...formData, solicitante_telefone: e.target.value })}
+                  className="h-11 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 focus:border-blue-500 transition-all duration-200"
+                />
                 </div>
                 <div>
                   <Label className="text-sm font-medium text-slate-700 mb-2 block">
                     Número do Chamado
                   </Label>
-                  <Input
-                    type="text"
-                    placeholder="Ex: CHM-2026-001"
-                    value={formData.numero_chamado}
-                    onChange={(e) => setFormData({ ...formData, numero_chamado: e.target.value })}
-                    className="h-11 text-sm border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
+                <Input
+                  type="text"
+                  placeholder="Ex: CHM-2026-001"
+                  value={formData.numero_chamado}
+                  onChange={(e) => setFormData({ ...formData, numero_chamado: e.target.value })}
+                  className="h-11 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 focus:border-blue-500 transition-all duration-200"
+                />
                 </div>
               </div>
             </div>
@@ -393,10 +393,10 @@ export default function SolicitacaoForm() {
         </Card>
 
         {/* SEÇÃO 2: EQUIPE E SERVIÇO */}
-        <Card className="mb-6 border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+        <Card className="mb-6 border border-slate-200 shadow-sm hover:shadow-lg hover:border-blue-200 transition-all duration-200">
           <div className="p-6">
             <div className="flex items-center gap-3 mb-6">
-              <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-600 text-white font-bold text-sm">
+              <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-600 text-white font-bold text-sm shadow-md">
                 2
               </div>
               <h2 className="text-lg font-semibold text-slate-900">Equipe e Serviço</h2>
@@ -409,7 +409,7 @@ export default function SolicitacaoForm() {
                   Tipo de Equipe <span className="text-red-500">*</span>
                 </Label>
                 <Select value={formData.tipo_equipe} onValueChange={(value) => setFormData({ ...formData, tipo_equipe: value })}>
-                  <SelectTrigger className="h-11 text-sm border-slate-300 focus:ring-2 focus:ring-blue-500">
+                  <SelectTrigger className="h-11 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 focus:border-blue-500 transition-all duration-200">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -441,7 +441,7 @@ export default function SolicitacaoForm() {
                   Tipo de Serviço <span className="text-red-500">*</span>
                 </Label>
                 <Select value={formData.tipo_servico} onValueChange={(value) => setFormData({ ...formData, tipo_servico: value })}>
-                  <SelectTrigger className="h-11 text-sm border-slate-300 focus:ring-2 focus:ring-blue-500">
+                  <SelectTrigger className="h-11 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 focus:border-blue-500 transition-all duration-200">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -457,7 +457,7 @@ export default function SolicitacaoForm() {
                   Sistema Afetado <span className="text-red-500">*</span>
                 </Label>
                 <Select value={formData.sistema_afetado} onValueChange={(value) => setFormData({ ...formData, sistema_afetado: value })}>
-                  <SelectTrigger className="h-11 text-sm border-slate-300 focus:ring-2 focus:ring-blue-500">
+                  <SelectTrigger className="h-11 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 focus:border-blue-500 transition-all duration-200">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -477,10 +477,10 @@ export default function SolicitacaoForm() {
                   Descrição Geral do Serviço <span className="text-red-500">*</span>
                 </Label>
                 <Textarea
-                  placeholder="Descreva o serviço que será realizado..."
+                  placeholder="Descreva o serviço realizado..."
                   value={formData.descricao_geral_servico}
                   onChange={(e) => setFormData({ ...formData, descricao_geral_servico: e.target.value })}
-                  className="min-h-24 text-sm border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                  className="min-h-24 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 focus:border-blue-500 transition-all duration-200 resize-none"
                 />
               </div>
             </div>
@@ -488,10 +488,10 @@ export default function SolicitacaoForm() {
         </Card>
 
         {/* SEÇÃO 3: MATERIAIS */}
-        <Card className="mb-6 border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+        <Card className="mb-6 border border-slate-200 shadow-sm hover:shadow-lg hover:border-blue-200 transition-all duration-200">
           <div className="p-6">
             <div className="flex items-center gap-3 mb-6">
-              <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-600 text-white font-bold text-sm">
+              <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-600 text-white font-bold text-sm shadow-md">
                 3
               </div>
               <h2 className="text-lg font-semibold text-slate-900">Materiais</h2>
@@ -792,25 +792,27 @@ export default function SolicitacaoForm() {
       {/* BOTÃO STICKY BOTTOM */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-lg">
         <div className="max-w-2xl mx-auto px-4 py-4">
-          <Button
+          <button
             type="submit"
-            onClick={handleSubmit}
             disabled={isSubmitting}
-            className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-base rounded-lg flex items-center justify-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full h-12 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold text-base rounded-lg flex items-center justify-center gap-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-blue-600 shadow-md hover:shadow-lg active:shadow-sm"
           >
             {isSubmitting ? (
               <>
-                <Loader2 size={20} className="animate-spin" />
+                <Loader2 className="w-5 h-5 animate-spin" />
                 Enviando...
               </>
             ) : (
-              "Enviar Solicitação"
+              <>
+                <CheckCircle2 className="w-5 h-5" />
+                Enviar Solicitação
+              </>
             )}
-          </Button>
+          </button>
         </div>
       </div>
 
-      {/* MODAL DE DIAGNÓSTICO */}
+      {/* MODAL DIAGNÓSTICO */}
       {showDiagnosticModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <Card className="w-full max-w-md p-6">

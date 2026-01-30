@@ -124,6 +124,13 @@
 - [ ] Smoke test: enviar sem foto
 - [ ] Smoke test: enviar com foto da câmera
 
-## Sprint 10 - Redesign Visual (FASE 2 - Opcional)
-- [ ] Polir componentes Card/Button/Input se FASE 1 passar
-- [ ] Validar que payload não mudou
+## Sprint 10 - Redesign Visual (FASE 2)
+- [x] Polir componentes Card com hover/shadow/border
+- [x] Melhorar Button com estados (hover/active/disabled/loading)
+- [x] Polir Input com validação visual (erro/sucesso)
+- [x] Adicionar microinterações (transitions/animations)
+- [x] Melhorar Select com visual aprimorado
+- [x] Adicionar feedback visual em fotos (upload/preview)
+- [x] Validar que payload não mudou
+- [x] Rodar testes automatizados (25 testes passando)
+- [ ] Smoke test final
