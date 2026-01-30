@@ -134,3 +134,11 @@
 - [x] Validar que payload não mudou
 - [x] Rodar testes automatizados (25 testes passando)
 - [ ] Smoke test final
+
+
+## Sprint 11 - Correções de UI/UX
+- [x] Padronizar selects da seção "Equipe e Serviço" (altura h-12, largura w-full)
+- [x] Abrir dropdown de lojas ao clicar/focar, mesmo com busca vazia
+- [x] Testes automatizados (25 testes passando)
+- [ ] Smoke test: enviar sem foto
+- [ ] Smoke test: enviar com foto da câmera

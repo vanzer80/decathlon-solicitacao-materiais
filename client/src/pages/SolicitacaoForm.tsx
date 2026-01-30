@@ -34,6 +34,7 @@ export default function SolicitacaoForm() {
   const [lojas, setLojas] = useState<LojaOption[]>([]);
   const [selectedLoja, setSelectedLoja] = useState<LojaOption | null>(null);
   const [searchLoja, setSearchLoja] = useState("");
+  const [isLojaDropdownOpen, setIsLojaDropdownOpen] = useState(false);
   const [materials, setMaterials] = useState<MaterialItem[]>([
     {
       id: "1",
@@ -319,9 +320,11 @@ export default function SolicitacaoForm() {
                     placeholder="Pesquise a loja..."
                     value={searchLoja}
                     onChange={(e) => setSearchLoja(e.target.value)}
-                    className="w-full h-11 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 focus:border-blue-500 transition-all duration-200"
+                    onFocus={() => setIsLojaDropdownOpen(true)}
+                    onClick={() => setIsLojaDropdownOpen(true)}
+                    className="w-full h-12 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 focus:border-blue-500 transition-all duration-200"
                   />
-                  {searchLoja && filteredLojas.length > 0 && (
+                  {isLojaDropdownOpen && filteredLojas.length > 0 && (
                     <div className="absolute top-full left-0 right-0 bg-white border border-slate-300 rounded-lg shadow-lg z-10 max-h-48 overflow-y-auto mt-2">
                       {filteredLojas.map((loja) => (
                         <button
@@ -330,12 +333,18 @@ export default function SolicitacaoForm() {
                           onClick={() => {
                             setSelectedLoja(loja);
                             setSearchLoja("");
+                            setIsLojaDropdownOpen(false);
                           }}
                           className="w-full text-left px-4 py-3 hover:bg-blue-50 text-sm border-b border-slate-100 last:border-b-0 transition-colors"
                         >
                           {loja.Loja_Label}
                         </button>
                       ))}
+                    </div>
+                  )}
+                  {isLojaDropdownOpen && filteredLojas.length === 0 && (
+                    <div className="absolute top-full left-0 right-0 bg-white border border-slate-300 rounded-lg shadow-lg z-10 p-4 mt-2 text-sm text-slate-600">
+                      Nenhuma loja encontrada
                     </div>
                   )}
                 </div>
@@ -409,7 +418,7 @@ export default function SolicitacaoForm() {
                   Tipo de Equipe <span className="text-red-500">*</span>
                 </Label>
                 <Select value={formData.tipo_equipe} onValueChange={(value) => setFormData({ ...formData, tipo_equipe: value })}>
-                  <SelectTrigger className="h-11 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 focus:border-blue-500 transition-all duration-200">
+                  <SelectTrigger className="w-full h-12 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 focus:border-blue-500 transition-all duration-200">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -441,7 +450,7 @@ export default function SolicitacaoForm() {
                   Tipo de Serviço <span className="text-red-500">*</span>
                 </Label>
                 <Select value={formData.tipo_servico} onValueChange={(value) => setFormData({ ...formData, tipo_servico: value })}>
-                  <SelectTrigger className="h-11 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 focus:border-blue-500 transition-all duration-200">
+                  <SelectTrigger className="w-full h-12 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 focus:border-blue-500 transition-all duration-200">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -457,7 +466,7 @@ export default function SolicitacaoForm() {
                   Sistema Afetado <span className="text-red-500">*</span>
                 </Label>
                 <Select value={formData.sistema_afetado} onValueChange={(value) => setFormData({ ...formData, sistema_afetado: value })}>
-                  <SelectTrigger className="h-11 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 focus:border-blue-500 transition-all duration-200">
+                  <SelectTrigger className="w-full h-12 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 focus:border-blue-500 transition-all duration-200">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
