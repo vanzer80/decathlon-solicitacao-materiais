@@ -1,6 +1,15 @@
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users } from "../drizzle/schema";
+import {
+  InsertUser,
+  users,
+  materialRequests,
+  materialItems,
+  MaterialRequest,
+  MaterialItem,
+  InsertMaterialRequest,
+  InsertMaterialItem,
+} from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -89,4 +98,88 @@ export async function getUserByOpenId(openId: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
-// TODO: add feature queries here as your schema grows.
+export async function createMaterialRequest(
+  request: InsertMaterialRequest
+): Promise<MaterialRequest | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  try {
+    const result = await db
+      .insert(materialRequests)
+      .values(request)
+      .$returningId();
+    return result.length > 0
+      ? await db
+          .select()
+          .from(materialRequests)
+          .where(eq(materialRequests.id, result[0].id))
+          .limit(1)
+          .then((rows) => rows[0])
+      : undefined;
+  } catch (error) {
+    console.error("[Database] Failed to create material request:", error);
+    throw error;
+  }
+}
+
+export async function createMaterialItem(
+  item: InsertMaterialItem
+): Promise<MaterialItem | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  try {
+    const result = await db
+      .insert(materialItems)
+      .values(item)
+      .$returningId();
+    return result.length > 0
+      ? await db
+          .select()
+          .from(materialItems)
+          .where(eq(materialItems.id, result[0].id))
+          .limit(1)
+          .then((rows) => rows[0])
+      : undefined;
+  } catch (error) {
+    console.error("[Database] Failed to create material item:", error);
+    throw error;
+  }
+}
+
+export async function getMaterialRequestByRequestId(
+  requestId: string
+): Promise<MaterialRequest | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  try {
+    const result = await db
+      .select()
+      .from(materialRequests)
+      .where(eq(materialRequests.requestId, requestId))
+      .limit(1);
+    return result.length > 0 ? result[0] : undefined;
+  } catch (error) {
+    console.error("[Database] Failed to get material request:", error);
+    throw error;
+  }
+}
+
+export async function getMaterialItemsByRequestId(
+  requestId: string
+): Promise<MaterialItem[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  try {
+    return await db
+      .select()
+      .from(materialItems)
+      .where(eq(materialItems.requestId, requestId));
+  } catch (error) {
+    console.error("[Database] Failed to get material items:", error);
+    throw error;
+  }
+}

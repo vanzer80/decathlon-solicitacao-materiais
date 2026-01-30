@@ -1,0 +1,283 @@
+# Solicitação de Materiais - Decathlon
+
+Web app público, mobile-first, para técnicos de campo solicitarem materiais com integração ao Google Apps Script.
+
+## 🚀 Início Rápido
+
+### Rodar localmente
+
+```bash
+# Instalar dependências
+pnpm install
+
+# Executar migrations do banco de dados
+pnpm db:push
+
+# Iniciar servidor de desenvolvimento
+pnpm dev
+```
+
+O app estará disponível em `http://localhost:3000`
+
+## 📋 Variáveis de Ambiente
+
+As seguintes variáveis de ambiente são necessárias:
+
+| Variável | Padrão | Descrição |
+|----------|--------|-----------|
+| `WEBHOOK_URL` | `https://script.google.com/macros/s/AKfycby9oLYJI9mJqSDOEi6kQQELU7naTfjpesQIYyfRvS8/exec` | URL do webhook do Google Apps Script |
+| `WEBHOOK_TOKEN` | `DECATHLON-2026` | Token de autenticação do webhook |
+| `USE_MOCK_WEBHOOK` | `false` | Se `true`, simula respostas do webhook para testes locais |
+| `DATABASE_URL` | Obrigatório | String de conexão do banco de dados MySQL |
+
+### Configurar variáveis localmente
+
+Crie um arquivo `.env.local` na raiz do projeto:
+
+```env
+WEBHOOK_URL=https://script.google.com/macros/s/AKfycby9oLYJI9mJqSDOEi6kQQELU7naTfjpesQIYyfRvS8/exec
+WEBHOOK_TOKEN=DECATHLON-2026
+USE_MOCK_WEBHOOK=false
+DATABASE_URL=mysql://user:password@localhost:3306/decathlon
+```
+
+## 🏗️ Arquitetura
+
+### Frontend (React + TypeScript)
+
+- **Formulário mobile-first** com validação por campo
+- **Dropdown pesquisável** de lojas (carregado de `/lojas.json`)
+- **Repetidor de materiais** com suporte a adicionar/remover itens
+- **Upload de fotos** (até 2 por material, máx 5MB)
+- **Tela de sucesso** com Request_ID
+
+### Backend (Node.js + Express + tRPC)
+
+- **Endpoint `/api/trpc/solicitacoes.submit`**: recebe e valida solicitações
+- **Serviço de webhook**: integração com Google Apps Script
+- **Serviço de upload**: armazena fotos em S3 (Manus storage)
+- **Banco de dados**: registra solicitações e materiais para auditoria
+
+### Integração com Google Apps Script
+
+O webhook do Apps Script recebe um payload JSON estruturado e grava cada material como uma linha no Google Sheets:
+
+```json
+{
+  "request_id": "20260130-142233-A1B2C3",
+  "timestamp_envio": "2026-01-30T14:22:33.000Z",
+  "header": {
+    "loja_id": 0,
+    "loja_label": "0000 - ESCRITÓRIO (SÃO PAULO/SP)",
+    "solicitante_nome": "João Silva",
+    "solicitante_telefone": "(11) 99999-9999",
+    "numero_chamado": "CHM-2026-001",
+    "tipo_equipe": "Própria",
+    "empresa_terceira": "",
+    "tipo_servico": "Preventiva",
+    "sistema_afetado": "HVAC",
+    "descricao_geral_servico": "Manutenção preventiva do ar condicionado"
+  },
+  "items": [
+    {
+      "material_descricao": "Filtro de ar",
+      "material_especificacao": "20x25cm",
+      "quantidade": 2,
+      "unidade": "un",
+      "urgencia": "Média",
+      "foto1_url": "https://storage.example.com/...",
+      "foto2_url": ""
+    }
+  ]
+}
+```
+
+## 🧪 Testes
+
+### Testes Unitários
+
+```bash
+# Executar todos os testes
+pnpm test
+
+# Executar testes em modo watch
+pnpm test -- --watch
+```
+
+Testes cobrem:
+- Geração de Request_ID (formato YYYYMMDD-HHMMSS-6CHARS)
+- Validação de respostas do webhook
+- Detecção de respostas HTML vs JSON
+
+### Teste do Webhook
+
+```bash
+# Teste real (envia para o webhook configurado)
+node webhook-test.mjs
+
+# Teste em modo mock (simula resposta)
+node webhook-test.mjs --mock
+
+# Com variáveis de ambiente customizadas
+WEBHOOK_URL="https://seu-webhook.com" WEBHOOK_TOKEN="seu-token" node webhook-test.mjs
+```
+
+O script imprime:
+- Status HTTP da resposta
+- Headers recebidos
+- Primeiros 500 caracteres do body
+- Se a resposta é JSON válido com `ok: true`
+
+### Teste de Upload de Fotos
+
+1. Abra o formulário em `http://localhost:3000`
+2. Preencha os campos obrigatórios
+3. Adicione um material
+4. Selecione uma foto (máx 5MB, tipo image/*)
+5. Envie a solicitação
+6. Verifique se a foto aparece no Google Sheets com URL pública
+
+## 📊 Fluxo de Dados
+
+```
+Frontend (Formulário)
+    ↓
+Validação (campos obrigatórios)
+    ↓
+Upload de fotos → S3 (Manus storage)
+    ↓
+Gerar Request_ID (YYYYMMDD-HHMMSS-6CHARS)
+    ↓
+Montar payload JSON
+    ↓
+POST → Webhook Google Apps Script
+    ↓
+Webhook valida e grava no Google Sheets (1 linha por material)
+    ↓
+Resposta: { "ok": true }
+    ↓
+Salvar no banco de dados local (auditoria)
+    ↓
+Exibir tela de sucesso com Request_ID
+```
+
+## 🔒 Segurança
+
+- **Honeypot anti-spam**: campo invisível no formulário
+- **Validação de arquivo**: apenas imagens, máx 5MB
+- **Token em dois lugares**: query param + header (redundância)
+- **URLs públicas**: fotos armazenadas em S3 público (sem login)
+- **Sem dados sensíveis em logs**: apenas snippet da resposta
+
+## 🐛 Troubleshooting
+
+### "Webhook retornou HTML — verifique URL /exec"
+
+**Causa**: URL do webhook está incorreta ou o Apps Script não foi publicado como Web App.
+
+**Solução**:
+1. Verifique se a URL termina com `/exec` (não `/dev`)
+2. Publique o Apps Script como Web App (Deploy → New deployment → Web app)
+3. Teste com `node webhook-test.mjs`
+
+### "Erro de autenticação - verifique token do webhook" (HTTP 401)
+
+**Causa**: Token inválido ou não enviado corretamente.
+
+**Solução**:
+1. Verifique se `WEBHOOK_TOKEN` está correto
+2. Confirme que o token é enviado em dois lugares:
+   - Query param: `?token=DECATHLON-2026`
+   - Header: `X-Webhook-Token: DECATHLON-2026`
+
+### Fotos não aparecem no Google Sheets
+
+**Causa**: Upload falhou ou URL não é pública.
+
+**Solução**:
+1. Verifique tamanho (máx 5MB) e tipo (image/*)
+2. Teste upload com formulário
+3. Verifique se a URL é acessível sem login
+
+### Banco de dados não conecta
+
+**Causa**: `DATABASE_URL` inválida ou servidor MySQL offline.
+
+**Solução**:
+1. Verifique string de conexão em `.env.local`
+2. Teste conexão: `mysql -u user -p -h host -D database`
+3. Execute migrations: `pnpm db:push`
+
+## 📝 Estrutura do Projeto
+
+```
+decathlon-solicitacao-materiais/
+├── client/
+│   ├── public/
+│   │   └── lojas.json                    # Lista de lojas (dropdown)
+│   └── src/
+│       ├── pages/
+│       │   ├── SolicitacaoForm.tsx       # Formulário principal
+│       │   └── SuccessPage.tsx           # Tela de sucesso
+│       └── App.tsx                       # Rotas
+├── server/
+│   ├── routers/
+│   │   └── solicitacoes.ts               # tRPC procedures
+│   ├── services/
+│   │   ├── webhookService.ts             # Integração com webhook
+│   │   └── uploadService.ts              # Upload de fotos
+│   ├── db.ts                             # Query helpers
+│   └── utils.test.ts                     # Testes unitários
+├── drizzle/
+│   └── schema.ts                         # Schema do banco de dados
+├── shared/
+│   ├── types.ts                          # Tipos compartilhados
+│   └── utils.ts                          # Utilitários (generateRequestId, etc)
+├── webhook-test.mjs                      # Script de teste do webhook
+└── README_DECATHLON.md                   # Este arquivo
+```
+
+## 📱 Campos do Formulário
+
+### Seção 1: Dados Principais
+- **Loja** (obrigatório): dropdown pesquisável
+- **Nome do Solicitante** (obrigatório)
+- **Telefone / WhatsApp** (opcional)
+- **Número do Chamado** (opcional)
+
+### Seção 2: Equipe e Serviço
+- **Tipo de Equipe** (obrigatório): Própria | Terceirizada
+- **Empresa Terceira** (obrigatório se Terceirizada)
+- **Tipo de Serviço** (obrigatório): Preventiva | Corretiva
+- **Tipo de Serviço / Equipamento** (obrigatório): HVAC | Elétrica | Hidráulica | Civil | PPCI | Outros
+- **Descrição Geral do Serviço** (obrigatório)
+
+### Seção 3: Materiais (repetidor)
+- **Descrição** (obrigatório)
+- **Especificação Técnica** (opcional)
+- **Quantidade** (obrigatório, > 0)
+- **Unidade** (obrigatório): un | cx | par | m | kg | L | rolo | kit | outro
+- **Urgência** (obrigatório): Alta | Média | Baixa
+- **Foto 1** (opcional, máx 5MB)
+- **Foto 2** (opcional, máx 5MB)
+
+## 🎨 Design
+
+- **Mobile-first**: otimizado para telas pequenas
+- **Cores**: azul Decathlon (#0082C3) como cor primária
+- **Cards**: layout em seções para melhor organização
+- **Feedback**: validação por campo, toasts de sucesso/erro
+
+## 📞 Suporte
+
+Para problemas ou dúvidas:
+1. Verifique o troubleshooting acima
+2. Consulte os logs do servidor (`devserver.log`)
+3. Teste o webhook com `node webhook-test.mjs`
+4. Verifique a publicação do Apps Script
+
+---
+
+**Versão**: 1.0.0  
+**Última atualização**: 30 de janeiro de 2026  
+**Status**: Production-ready

@@ -25,4 +25,38 @@ export const users = mysqlTable("users", {
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
-// TODO: Add your tables here
+export const materialRequests = mysqlTable("material_requests", {
+  id: int("id").autoincrement().primaryKey(),
+  requestId: varchar("request_id", { length: 64 }).notNull().unique(),
+  timestampEnvio: timestamp("timestamp_envio").notNull(),
+  lojaId: int("loja_id").notNull(),
+  lojaLabel: varchar("loja_label", { length: 255 }).notNull(),
+  solicitanteNome: varchar("solicitante_nome", { length: 255 }).notNull(),
+  solicitanteTelefone: varchar("solicitante_telefone", { length: 20 }),
+  numeroChamado: varchar("numero_chamado", { length: 50 }),
+  tipoEquipe: varchar("tipo_equipe", { length: 50 }).notNull(),
+  empresaTerceira: varchar("empresa_terceira", { length: 255 }),
+  tipoServico: varchar("tipo_servico", { length: 50 }).notNull(),
+  sistemaAfetado: varchar("sistema_afetado", { length: 50 }).notNull(),
+  descricaoGeralServico: text("descricao_geral_servico").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type MaterialRequest = typeof materialRequests.$inferSelect;
+export type InsertMaterialRequest = typeof materialRequests.$inferInsert;
+
+export const materialItems = mysqlTable("material_items", {
+  id: int("id").autoincrement().primaryKey(),
+  requestId: varchar("request_id", { length: 64 }).notNull(),
+  materialDescricao: varchar("material_descricao", { length: 255 }).notNull(),
+  materialEspecificacao: text("material_especificacao"),
+  quantidade: int("quantidade").notNull(),
+  unidade: varchar("unidade", { length: 50 }).notNull(),
+  urgencia: varchar("urgencia", { length: 50 }).notNull(),
+  foto1Url: text("foto1_url"),
+  foto2Url: text("foto2_url"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type MaterialItem = typeof materialItems.$inferSelect;
+export type InsertMaterialItem = typeof materialItems.$inferInsert;
