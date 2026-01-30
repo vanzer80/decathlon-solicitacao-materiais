@@ -109,3 +109,21 @@
 - [x] Melhorar função triggerFileInput com setAttribute dinâmico
 - [x] Adicionar reset de input para permitir mesmo arquivo novamente
 - [ ] Testar em dispositivo mobile
+
+
+## Sprint 9 - Redesign Visual (FASE 1)
+- [x] Atualizar header com logo/branding MOPAR
+- [x] Implementar layout responsivo com max-width
+- [x] Redesenhar cards de seção com badges numeradas
+- [x] Melhorar inputs com altura maior e foco visual
+- [x] Redesenhar seção de materiais com cards
+- [x] Melhorar preview de fotos
+- [x] Botão enviar com sticky bottom no mobile
+- [x] Validar que nenhuma lógica foi alterada
+- [x] Rodar testes automatizados (25 testes passando)
+- [ ] Smoke test: enviar sem foto
+- [ ] Smoke test: enviar com foto da câmera
+
+## Sprint 10 - Redesign Visual (FASE 2 - Opcional)
+- [ ] Polir componentes Card/Button/Input se FASE 1 passar
+- [ ] Validar que payload não mudou

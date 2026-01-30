@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -14,7 +14,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { LojaOption } from "@shared/types";
-import { Loader2, Trash2, Plus, Camera, Image as ImageIcon, X } from "lucide-react";
+import { Loader2, Trash2, Plus, Camera, Image as ImageIcon, X, CheckCircle2 } from "lucide-react";
+import { useLocation } from "wouter";
 
 interface MaterialItem {
   id: string;
@@ -47,11 +48,8 @@ export default function SolicitacaoForm() {
   const [showDiagnosticModal, setShowDiagnosticModal] = useState(false);
   const [diagnosticResult, setDiagnosticResult] = useState<any>(null);
   const [isDiagnosing, setIsDiagnosing] = useState(false);
+  const [, setLocation] = useLocation();
 
-  // Refs para inputs de câmera e galeria
-  const fileInputRefs = useRef<Record<string, Record<string, HTMLInputElement | null>>>({});
-
-  // Formulário principal
   const [formData, setFormData] = useState({
     solicitante_nome: "",
     solicitante_telefone: "",
@@ -64,137 +62,11 @@ export default function SolicitacaoForm() {
     honeypot: "",
   });
 
-  // Função para diagnosticar webhook
-  const handleDiagnoseWebhook = async () => {
-    setIsDiagnosing(true);
-    try {
-      const result = await trpc.webhook.diagnose.useQuery().promise;
-      setDiagnosticResult(result);
-      setShowDiagnosticModal(true);
-    } catch (error) {
-      toast.error("Erro ao diagnosticar webhook");
-      console.error(error);
-    } finally {
-      setIsDiagnosing(false);
-    }
-  };
-
-  // Carrega lista de lojas
-  useEffect(() => {
-    fetch("/lojas.json")
-      .then((res) => res.json())
-      .then((data) => setLojas(data))
-      .catch((err) => {
-        console.error("Erro ao carregar lojas:", err);
-        toast.error("Erro ao carregar lista de lojas");
-      });
-  }, []);
+  const fileInputRefs = useRef<Record<string, Record<string, HTMLInputElement | null>>>({});
 
   const filteredLojas = lojas.filter((loja) =>
     loja.Loja_Label.toLowerCase().includes(searchLoja.toLowerCase())
   );
-
-  const handleMaterialChange = (id: string, field: string, value: unknown) => {
-    setMaterials((prev) =>
-      prev.map((m) =>
-        m.id === id ? { ...m, [field]: value } : m
-      )
-    );
-  };
-
-  const handleAddMaterial = () => {
-    const newId = String(Math.max(...materials.map((m) => parseInt(m.id) || 0)) + 1);
-    setMaterials((prev) => [
-      ...prev,
-      {
-        id: newId,
-        material_descricao: "",
-        material_especificacao: "",
-        quantidade: 1,
-        unidade: "un",
-        urgencia: "Média",
-      },
-    ]);
-  };
-
-  const handleRemoveMaterial = (id: string) => {
-    if (materials.length > 1) {
-      // Limpar previews
-      const material = materials.find((m) => m.id === id);
-      if (material?.foto1Preview) {
-        URL.revokeObjectURL(material.foto1Preview);
-      }
-      if (material?.foto2Preview) {
-        URL.revokeObjectURL(material.foto2Preview);
-      }
-      setMaterials((prev) => prev.filter((m) => m.id !== id));
-    }
-  };
-
-  const handleFileSelect = (
-    materialId: string,
-    fotoSlot: "foto1" | "foto2",
-    file: File | undefined
-  ) => {
-    if (!file) return;
-
-    // Validar tipo
-    if (!file.type.startsWith("image/")) {
-      toast.error("Apenas imagens são permitidas");
-      return;
-    }
-
-    // Validar tamanho (5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("Arquivo muito grande (máx 5MB)");
-      return;
-    }
-
-    // Criar preview
-    const previewUrl = URL.createObjectURL(file);
-
-    setMaterials((prev) =>
-      prev.map((m) => {
-        if (m.id === materialId) {
-          // Revogar URL anterior se existir
-          if (fotoSlot === "foto1" && m.foto1Preview) {
-            URL.revokeObjectURL(m.foto1Preview);
-          }
-          if (fotoSlot === "foto2" && m.foto2Preview) {
-            URL.revokeObjectURL(m.foto2Preview);
-          }
-
-          return {
-            ...m,
-            [fotoSlot]: file,
-            [`${fotoSlot}Preview`]: previewUrl,
-          };
-        }
-        return m;
-      })
-    );
-
-    toast.success(`Foto adicionada: ${file.name}`);
-  };
-
-  const handleRemovePhoto = (materialId: string, fotoSlot: "foto1" | "foto2") => {
-    setMaterials((prev) =>
-      prev.map((m) => {
-        if (m.id === materialId) {
-          const previewKey = `${fotoSlot}Preview` as const;
-          if (m[previewKey]) {
-            URL.revokeObjectURL(m[previewKey]);
-          }
-          return {
-            ...m,
-            [fotoSlot]: undefined,
-            [previewKey]: undefined,
-          };
-        }
-        return m;
-      })
-    );
-  };
 
   const triggerFileInput = (
     materialId: string,
@@ -208,15 +80,12 @@ export default function SolicitacaoForm() {
     const key = `${fotoSlot}-${inputType}`;
     const input = fileInputRefs.current[materialId][key] as HTMLInputElement | null;
     if (input) {
-      // Reset o input para permitir selecionar o mesmo arquivo novamente
       input.value = "";
-      // Garante que o atributo capture está presente
       if (inputType === "camera") {
         input.setAttribute("capture", "environment");
       } else {
         input.removeAttribute("capture");
       }
-      // Dispara o clique
       input.click();
     }
   };
@@ -227,7 +96,6 @@ export default function SolicitacaoForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validações
     if (!selectedLoja) {
       toast.error("Selecione uma loja");
       return;
@@ -238,32 +106,19 @@ export default function SolicitacaoForm() {
       return;
     }
 
-    if (formData.tipo_equipe === "Terceirizada" && !formData.empresa_terceira.trim()) {
-      toast.error("Empresa terceira é obrigatória");
+    if (formData.honeypot) {
+      console.warn("[Security] Honeypot field filled - potential bot");
       return;
     }
 
-    if (!formData.descricao_geral_servico.trim()) {
-      toast.error("Descrição geral do serviço é obrigatória");
+    if (materials.length === 0) {
+      toast.error("Adicione pelo menos um material");
       return;
-    }
-
-    // Valida materiais
-    for (const material of materials) {
-      if (!material.material_descricao.trim()) {
-        toast.error("Descrição do material é obrigatória");
-        return;
-      }
-      if (material.quantidade <= 0) {
-        toast.error("Quantidade deve ser maior que 0");
-        return;
-      }
     }
 
     setIsSubmitting(true);
 
     try {
-      // Processa fotos e monta payload
       const itemsWithPhotos = await Promise.all(
         materials.map(async (material) => {
           let foto1_url = "";
@@ -332,64 +187,142 @@ export default function SolicitacaoForm() {
         honeypot: formData.honeypot,
       });
 
-      toast.success("Solicitação enviada com sucesso!");
-      // Redireciona para tela de sucesso
-      window.location.href = `/sucesso?requestId=${result.requestId}`;
-    } catch (error) {
-      console.error("Erro ao enviar solicitação:", error);
-      toast.error(
-        error instanceof Error ? error.message : "Erro ao enviar solicitação"
-      );
+      if (result.requestId) {
+        setLocation(`/sucesso?id=${result.requestId}`);
+      }
+    } catch (error: any) {
+      console.error("[API Mutation Error]", error);
+      if (error.data?.code === "BAD_REQUEST") {
+        const issues = error.data.zodError?.fieldErrors;
+        if (issues) {
+          Object.entries(issues).forEach(([field, messages]: any) => {
+            toast.error(`${field}: ${messages[0]}`);
+          });
+        }
+      } else {
+        toast.error(error.message || "Erro ao enviar solicitação");
+      }
+      setShowDiagnosticModal(true);
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  const handleFileSelect = (materialId: string, fotoSlot: "foto1" | "foto2", file?: File) => {
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setMaterials((prev) =>
+        prev.map((m) =>
+          m.id === materialId
+            ? {
+                ...m,
+                [fotoSlot]: file,
+                [`${fotoSlot}Preview`]: e.target?.result as string,
+              }
+            : m
+        )
+      );
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemovePhoto = (materialId: string, fotoSlot: "foto1" | "foto2") => {
+    setMaterials((prev) =>
+      prev.map((m) =>
+        m.id === materialId
+          ? {
+              ...m,
+              [fotoSlot]: undefined,
+              [`${fotoSlot}Preview`]: undefined,
+            }
+          : m
+      )
+    );
+  };
+
+  const addMaterial = () => {
+    setMaterials((prev) => [
+      ...prev,
+      {
+        id: Date.now().toString(),
+        material_descricao: "",
+        material_especificacao: "",
+        quantidade: 1,
+        unidade: "un",
+        urgencia: "Média",
+      },
+    ]);
+  };
+
+  const removeMaterial = (id: string) => {
+    if (materials.length > 1) {
+      setMaterials((prev) => prev.filter((m) => m.id !== id));
+    }
+  };
+
+
+
+  useEffect(() => {
+    fetch("/lojas.json")
+      .then((res) => res.json())
+      .then((data) => setLojas(data))
+      .catch((err) => console.error("Erro ao carregar lojas:", err));
+  }, []);
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white p-4">
-      <div className="max-w-2xl mx-auto">
-        {/* Cabeçalho */}
-        <div className="text-center mb-8 pt-6">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Solicitação de Materiais
-          </h1>
-          <p className="text-gray-600">MOPAR - Técnicos de Campo</p>
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-50 pb-32">
+      {/* HEADER */}
+      <div className="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
+        <div className="max-w-2xl mx-auto px-4 py-6">
+          <div className="text-center">
+            <h1 className="text-3xl font-bold text-slate-900 mb-1">Solicitação de Materiais</h1>
+            <p className="text-sm text-slate-600">MOPAR – Técnicos de Campo</p>
+            <p className="text-xs text-slate-500 mt-2">Sem login • Rápido • Seguro</p>
+          </div>
         </div>
+      </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Honeypot */}
-          <input
-            type="text"
-            name="honeypot"
-            value={formData.honeypot}
-            onChange={(e) => setFormData({ ...formData, honeypot: e.target.value })}
-            style={{ display: "none" }}
-            aria-hidden="true"
-            tabIndex={-1}
-          />
+      {/* CONTAINER PRINCIPAL */}
+      <form onSubmit={handleSubmit} className="max-w-2xl mx-auto px-4 py-8">
+        {/* Honeypot */}
+        <input
+          type="text"
+          name="honeypot"
+          value={formData.honeypot}
+          onChange={(e) => setFormData({ ...formData, honeypot: e.target.value })}
+          style={{ display: "none" }}
+          aria-hidden="true"
+          tabIndex={-1}
+        />
 
-          {/* SEÇÃO 1: DADOS PRINCIPAIS */}
-          <Card className="p-6 border-2 border-blue-100">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">
-              1. Dados Principais
-            </h2>
+        {/* SEÇÃO 1: DADOS PRINCIPAIS */}
+        <Card className="mb-6 border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+          <div className="p-6">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-600 text-white font-bold text-sm">
+                1
+              </div>
+              <h2 className="text-lg font-semibold text-slate-900">Dados Principais</h2>
+            </div>
 
-            <div className="space-y-4">
+            <div className="space-y-5">
               {/* Loja */}
               <div>
-                <Label className="text-gray-700 font-medium">
+                <Label className="text-sm font-medium text-slate-700 mb-2 block">
                   Loja / Cliente <span className="text-red-500">*</span>
                 </Label>
-                <div className="relative mt-2">
+                <div className="relative">
                   <Input
                     type="text"
                     placeholder="Pesquise a loja..."
                     value={searchLoja}
                     onChange={(e) => setSearchLoja(e.target.value)}
-                    className="w-full"
+                    className="w-full h-11 text-sm border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                   {searchLoja && filteredLojas.length > 0 && (
-                    <div className="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-md shadow-lg z-10 max-h-48 overflow-y-auto mt-1">
+                    <div className="absolute top-full left-0 right-0 bg-white border border-slate-300 rounded-lg shadow-lg z-10 max-h-48 overflow-y-auto mt-2">
                       {filteredLojas.map((loja) => (
                         <button
                           key={loja.Loja_ID}
@@ -398,7 +331,7 @@ export default function SolicitacaoForm() {
                             setSelectedLoja(loja);
                             setSearchLoja("");
                           }}
-                          className="w-full text-left px-4 py-2 hover:bg-blue-50 text-sm"
+                          className="w-full text-left px-4 py-3 hover:bg-blue-50 text-sm border-b border-slate-100 last:border-b-0 transition-colors"
                         >
                           {loja.Loja_Label}
                         </button>
@@ -407,84 +340,76 @@ export default function SolicitacaoForm() {
                   )}
                 </div>
                 {selectedLoja && (
-                  <p className="text-sm text-green-600 mt-2">
-                    ✓ {selectedLoja.Loja_Label}
-                  </p>
+                  <div className="flex items-center gap-2 mt-2 text-sm text-green-600">
+                    <CheckCircle2 size={16} />
+                    {selectedLoja.Loja_Label}
+                  </div>
                 )}
               </div>
 
               {/* Nome do Solicitante */}
               <div>
-                <Label className="text-gray-700 font-medium">
+                <Label className="text-sm font-medium text-slate-700 mb-2 block">
                   Nome do Solicitante <span className="text-red-500">*</span>
                 </Label>
                 <Input
                   type="text"
                   placeholder="Seu nome completo"
                   value={formData.solicitante_nome}
-                  onChange={(e) =>
-                    setFormData({ ...formData, solicitante_nome: e.target.value })
-                  }
-                  className="mt-2"
+                  onChange={(e) => setFormData({ ...formData, solicitante_nome: e.target.value })}
+                  className="h-11 text-sm border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
 
-              {/* Telefone */}
-              <div>
-                <Label className="text-gray-700 font-medium">
-                  Telefone / WhatsApp
-                </Label>
-                <Input
-                  type="tel"
-                  placeholder="(11) 99999-9999"
-                  value={formData.solicitante_telefone}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      solicitante_telefone: e.target.value,
-                    })
-                  }
-                  className="mt-2"
-                />
-              </div>
-
-              {/* Número do Chamado */}
-              <div>
-                <Label className="text-gray-700 font-medium">
-                  Número do Chamado
-                </Label>
-                <Input
-                  type="text"
-                  placeholder="Ex: CHM-2026-001"
-                  value={formData.numero_chamado}
-                  onChange={(e) =>
-                    setFormData({ ...formData, numero_chamado: e.target.value })
-                  }
-                  className="mt-2"
-                />
+              {/* Telefone e Número do Chamado */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-medium text-slate-700 mb-2 block">
+                    Telefone / WhatsApp
+                  </Label>
+                  <Input
+                    type="tel"
+                    placeholder="(11) 99999-9999"
+                    value={formData.solicitante_telefone}
+                    onChange={(e) => setFormData({ ...formData, solicitante_telefone: e.target.value })}
+                    className="h-11 text-sm border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-slate-700 mb-2 block">
+                    Número do Chamado
+                  </Label>
+                  <Input
+                    type="text"
+                    placeholder="Ex: CHM-2026-001"
+                    value={formData.numero_chamado}
+                    onChange={(e) => setFormData({ ...formData, numero_chamado: e.target.value })}
+                    className="h-11 text-sm border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
               </div>
             </div>
-          </Card>
+          </div>
+        </Card>
 
-          {/* SEÇÃO 2: EQUIPE E SERVIÇO */}
-          <Card className="p-6 border-2 border-blue-100">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">
-              2. Equipe e Serviço
-            </h2>
+        {/* SEÇÃO 2: EQUIPE E SERVIÇO */}
+        <Card className="mb-6 border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+          <div className="p-6">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-600 text-white font-bold text-sm">
+                2
+              </div>
+              <h2 className="text-lg font-semibold text-slate-900">Equipe e Serviço</h2>
+            </div>
 
-            <div className="space-y-4">
+            <div className="space-y-5">
               {/* Tipo de Equipe */}
               <div>
-                <Label className="text-gray-700 font-medium">
+                <Label className="text-sm font-medium text-slate-700 mb-2 block">
                   Tipo de Equipe <span className="text-red-500">*</span>
                 </Label>
-                <Select
-                  value={formData.tipo_equipe}
-                  onValueChange={(value) =>
-                    setFormData({ ...formData, tipo_equipe: value })
-                  }
-                >
-                  <SelectTrigger className="mt-2">
+                <Select value={formData.tipo_equipe} onValueChange={(value) => setFormData({ ...formData, tipo_equipe: value })}>
+                  <SelectTrigger className="h-11 text-sm border-slate-300 focus:ring-2 focus:ring-blue-500">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -497,37 +422,26 @@ export default function SolicitacaoForm() {
               {/* Empresa Terceira */}
               {formData.tipo_equipe === "Terceirizada" && (
                 <div>
-                  <Label className="text-gray-700 font-medium">
-                    Empresa / Nome da Equipe Terceirizada{" "}
-                    <span className="text-red-500">*</span>
+                  <Label className="text-sm font-medium text-slate-700 mb-2 block">
+                    Empresa / Nome da Equipe <span className="text-red-500">*</span>
                   </Label>
                   <Input
                     type="text"
                     placeholder="Nome da empresa"
                     value={formData.empresa_terceira}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        empresa_terceira: e.target.value,
-                      })
-                    }
-                    className="mt-2"
+                    onChange={(e) => setFormData({ ...formData, empresa_terceira: e.target.value })}
+                    className="h-11 text-sm border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
               )}
 
               {/* Tipo de Serviço */}
               <div>
-                <Label className="text-gray-700 font-medium">
+                <Label className="text-sm font-medium text-slate-700 mb-2 block">
                   Tipo de Serviço <span className="text-red-500">*</span>
                 </Label>
-                <Select
-                  value={formData.tipo_servico}
-                  onValueChange={(value) =>
-                    setFormData({ ...formData, tipo_servico: value })
-                  }
-                >
-                  <SelectTrigger className="mt-2">
+                <Select value={formData.tipo_servico} onValueChange={(value) => setFormData({ ...formData, tipo_servico: value })}>
+                  <SelectTrigger className="h-11 text-sm border-slate-300 focus:ring-2 focus:ring-blue-500">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -539,16 +453,11 @@ export default function SolicitacaoForm() {
 
               {/* Sistema Afetado */}
               <div>
-                <Label className="text-gray-700 font-medium">
-                  Tipo de Serviço / Equipamento <span className="text-red-500">*</span>
+                <Label className="text-sm font-medium text-slate-700 mb-2 block">
+                  Sistema Afetado <span className="text-red-500">*</span>
                 </Label>
-                <Select
-                  value={formData.sistema_afetado}
-                  onValueChange={(value) =>
-                    setFormData({ ...formData, sistema_afetado: value })
-                  }
-                >
-                  <SelectTrigger className="mt-2">
+                <Select value={formData.sistema_afetado} onValueChange={(value) => setFormData({ ...formData, sistema_afetado: value })}>
+                  <SelectTrigger className="h-11 text-sm border-slate-300 focus:ring-2 focus:ring-blue-500">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -564,123 +473,126 @@ export default function SolicitacaoForm() {
 
               {/* Descrição Geral */}
               <div>
-                <Label className="text-gray-700 font-medium">
+                <Label className="text-sm font-medium text-slate-700 mb-2 block">
                   Descrição Geral do Serviço <span className="text-red-500">*</span>
                 </Label>
                 <Textarea
                   placeholder="Descreva o serviço que será realizado..."
                   value={formData.descricao_geral_servico}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      descricao_geral_servico: e.target.value,
-                    })
-                  }
-                  className="mt-2 min-h-24"
+                  onChange={(e) => setFormData({ ...formData, descricao_geral_servico: e.target.value })}
+                  className="min-h-24 text-sm border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
                 />
               </div>
             </div>
-          </Card>
+          </div>
+        </Card>
 
-          {/* SEÇÃO 3: MATERIAIS */}
-          <Card className="p-6 border-2 border-blue-100">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">
-              3. Materiais <span className="text-red-500">*</span>
-            </h2>
+        {/* SEÇÃO 3: MATERIAIS */}
+        <Card className="mb-6 border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+          <div className="p-6">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-600 text-white font-bold text-sm">
+                3
+              </div>
+              <h2 className="text-lg font-semibold text-slate-900">Materiais</h2>
+              <span className="ml-auto text-xs font-medium text-slate-500 bg-slate-100 px-2 py-1 rounded">
+                {materials.length} {materials.length === 1 ? "item" : "itens"}
+              </span>
+            </div>
 
-            <div className="space-y-4">
+            <div className="space-y-6">
               {materials.map((material, index) => (
-                <div
-                  key={material.id}
-                  className="p-4 bg-gray-50 rounded-lg border border-gray-200"
-                >
-                  <div className="flex justify-between items-center mb-4">
-                    <h3 className="font-medium text-gray-900">
-                      Material {index + 1}
-                    </h3>
+                <div key={material.id} className="p-4 border border-slate-200 rounded-lg bg-slate-50 hover:bg-white transition-colors">
+                  {/* Cabeçalho do Material */}
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-medium text-slate-900">Material {index + 1}</h3>
                     {materials.length > 1 && (
                       <button
                         type="button"
-                        onClick={() => handleRemoveMaterial(material.id)}
-                        className="text-red-500 hover:text-red-700 p-1"
+                        onClick={() => removeMaterial(material.id)}
+                        className="text-red-500 hover:text-red-700 hover:bg-red-50 p-1 rounded transition-colors"
                       >
                         <Trash2 size={18} />
                       </button>
                     )}
                   </div>
 
-                  <div className="space-y-3">
+                  <div className="space-y-4">
                     {/* Descrição */}
                     <div>
-                      <Label className="text-sm text-gray-700">
+                      <Label className="text-xs font-medium text-slate-700 mb-1 block">
                         Descrição <span className="text-red-500">*</span>
                       </Label>
                       <Input
                         type="text"
-                        placeholder="Descreva o material"
+                        placeholder="Ex: Filtro de ar"
                         value={material.material_descricao}
                         onChange={(e) =>
-                          handleMaterialChange(
-                            material.id,
-                            "material_descricao",
-                            e.target.value
+                          setMaterials((prev) =>
+                            prev.map((m) =>
+                              m.id === material.id ? { ...m, material_descricao: e.target.value } : m
+                            )
                           )
                         }
-                        className="mt-1"
+                        className="h-10 text-sm border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       />
                     </div>
 
                     {/* Especificação */}
                     <div>
-                      <Label className="text-sm text-gray-700">
-                        Especificação Técnica
+                      <Label className="text-xs font-medium text-slate-700 mb-1 block">
+                        Especificação
                       </Label>
                       <Input
                         type="text"
-                        placeholder="Ex: 220V, 10A"
+                        placeholder="Ex: Modelo XYZ-123"
                         value={material.material_especificacao}
                         onChange={(e) =>
-                          handleMaterialChange(
-                            material.id,
-                            "material_especificacao",
-                            e.target.value
+                          setMaterials((prev) =>
+                            prev.map((m) =>
+                              m.id === material.id ? { ...m, material_especificacao: e.target.value } : m
+                            )
                           )
                         }
-                        className="mt-1"
+                        className="h-10 text-sm border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       />
                     </div>
 
-                    {/* Quantidade e Unidade */}
-                    <div className="grid grid-cols-2 gap-3">
+                    {/* Quantidade, Unidade, Urgência */}
+                    <div className="grid grid-cols-3 gap-3">
                       <div>
-                        <Label className="text-sm text-gray-700">
-                          Quantidade <span className="text-red-500">*</span>
+                        <Label className="text-xs font-medium text-slate-700 mb-1 block">
+                          Qtd <span className="text-red-500">*</span>
                         </Label>
                         <Input
                           type="number"
                           min="1"
                           value={material.quantidade}
                           onChange={(e) =>
-                            handleMaterialChange(
-                              material.id,
-                              "quantidade",
-                              parseInt(e.target.value) || 1
+                            setMaterials((prev) =>
+                              prev.map((m) =>
+                                m.id === material.id ? { ...m, quantidade: parseInt(e.target.value) || 1 } : m
+                              )
                             )
                           }
-                          className="mt-1"
+                          className="h-10 text-sm border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         />
                       </div>
                       <div>
-                        <Label className="text-sm text-gray-700">
+                        <Label className="text-xs font-medium text-slate-700 mb-1 block">
                           Unidade <span className="text-red-500">*</span>
                         </Label>
                         <Select
                           value={material.unidade}
                           onValueChange={(value) =>
-                            handleMaterialChange(material.id, "unidade", value)
+                            setMaterials((prev) =>
+                              prev.map((m) =>
+                                m.id === material.id ? { ...m, unidade: value } : m
+                              )
+                            )
                           }
                         >
-                          <SelectTrigger className="mt-1">
+                          <SelectTrigger className="h-10 text-sm border-slate-300 focus:ring-2 focus:ring-blue-500">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -696,77 +608,74 @@ export default function SolicitacaoForm() {
                           </SelectContent>
                         </Select>
                       </div>
-                    </div>
-
-                    {/* Urgência */}
-                    <div>
-                      <Label className="text-sm text-gray-700">
-                        Urgência <span className="text-red-500">*</span>
-                      </Label>
-                      <Select
-                        value={material.urgencia}
-                        onValueChange={(value) =>
-                          handleMaterialChange(material.id, "urgencia", value)
-                        }
-                      >
-                        <SelectTrigger className="mt-1">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Alta">Alta</SelectItem>
-                          <SelectItem value="Média">Média</SelectItem>
-                          <SelectItem value="Baixa">Baixa</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {/* Fotos com Câmera e Galeria */}
-                    <div className="grid grid-cols-2 gap-3">
-                      {/* Foto 1 */}
                       <div>
-                        <Label className="text-sm text-gray-700 block mb-2">
-                          Foto 1
+                        <Label className="text-xs font-medium text-slate-700 mb-1 block">
+                          Urgência <span className="text-red-500">*</span>
                         </Label>
+                        <Select
+                          value={material.urgencia}
+                          onValueChange={(value) =>
+                            setMaterials((prev) =>
+                              prev.map((m) =>
+                                m.id === material.id ? { ...m, urgencia: value } : m
+                              )
+                            )
+                          }
+                        >
+                          <SelectTrigger className="h-10 text-sm border-slate-300 focus:ring-2 focus:ring-blue-500">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Alta">Alta</SelectItem>
+                            <SelectItem value="Média">Média</SelectItem>
+                            <SelectItem value="Baixa">Baixa</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    {/* Fotos */}
+                    <div className="border-t border-slate-200 pt-4">
+                      <p className="text-xs font-medium text-slate-700 mb-3">Fotos (Máx 5MB • Até 2 fotos)</p>
+
+                      {/* Foto 1 */}
+                      <div className="mb-3">
+                        <p className="text-xs text-slate-600 mb-2">Foto 1</p>
                         {material.foto1Preview ? (
-                          <div className="relative">
+                          <div className="relative inline-block">
                             <img
                               src={material.foto1Preview}
                               alt="Preview foto 1"
-                              className="w-full h-32 object-cover rounded border border-gray-300"
+                              className="h-24 w-24 object-cover rounded-lg border-2 border-blue-300 shadow-sm"
                             />
                             <button
                               type="button"
                               onClick={() => handleRemovePhoto(material.id, "foto1")}
-                              className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded hover:bg-red-600"
+                              className="absolute -top-2 -right-2 bg-red-500 text-white p-1 rounded-full hover:bg-red-600 shadow-md"
                             >
-                              <X size={16} />
+                              <X size={14} />
                             </button>
                           </div>
                         ) : (
                           <div className="flex gap-2">
                             <button
                               type="button"
-                              onClick={() =>
-                                triggerFileInput(material.id, "foto1", "gallery")
-                              }
-                              className="flex-1 flex items-center justify-center gap-2 p-2 border border-gray-300 rounded hover:bg-gray-100 text-sm"
+                              onClick={() => triggerFileInput(material.id, "foto1", "gallery")}
+                              className="flex-1 flex items-center justify-center gap-2 p-3 border-2 border-dashed border-slate-300 rounded-lg hover:border-blue-400 hover:bg-blue-50 text-sm font-medium text-slate-700 transition-colors"
                             >
-                              <ImageIcon size={16} />
+                              <ImageIcon size={18} />
                               Galeria
                             </button>
                             <button
                               type="button"
-                              onClick={() =>
-                                triggerFileInput(material.id, "foto1", "camera")
-                              }
-                              className="flex-1 flex items-center justify-center gap-2 p-2 border border-gray-300 rounded hover:bg-gray-100 text-sm"
+                              onClick={() => triggerFileInput(material.id, "foto1", "camera")}
+                              className="flex-1 flex items-center justify-center gap-2 p-3 border-2 border-dashed border-slate-300 rounded-lg hover:border-blue-400 hover:bg-blue-50 text-sm font-medium text-slate-700 transition-colors"
                             >
-                              <Camera size={16} />
+                              <Camera size={18} />
                               Câmera
                             </button>
                           </div>
                         )}
-                        {/* Inputs escondidos */}
                         <input
                           ref={(el) => {
                             if (!fileInputRefs.current[material.id]) {
@@ -777,11 +686,8 @@ export default function SolicitacaoForm() {
                           type="file"
                           accept="image/*"
                           style={{ display: "none" }}
-                          onChange={(e) =>
-                            handleFileSelect(material.id, "foto1", e.target.files?.[0])
-                          }
+                          onChange={(e) => handleFileSelect(material.id, "foto1", e.target.files?.[0])}
                         />
-                        {/* Input de câmera com capture */}
                         <input
                           ref={(el) => {
                             if (!fileInputRefs.current[material.id]) {
@@ -793,57 +699,48 @@ export default function SolicitacaoForm() {
                           accept="image/*"
                           capture="environment"
                           style={{ display: "none" }}
-                          onChange={(e) =>
-                            handleFileSelect(material.id, "foto1", e.target.files?.[0])
-                          }
+                          onChange={(e) => handleFileSelect(material.id, "foto1", e.target.files?.[0])}
                         />
                       </div>
 
                       {/* Foto 2 */}
                       <div>
-                        <Label className="text-sm text-gray-700 block mb-2">
-                          Foto 2
-                        </Label>
+                        <p className="text-xs text-slate-600 mb-2">Foto 2</p>
                         {material.foto2Preview ? (
-                          <div className="relative">
+                          <div className="relative inline-block">
                             <img
                               src={material.foto2Preview}
                               alt="Preview foto 2"
-                              className="w-full h-32 object-cover rounded border border-gray-300"
+                              className="h-24 w-24 object-cover rounded-lg border-2 border-blue-300 shadow-sm"
                             />
                             <button
                               type="button"
                               onClick={() => handleRemovePhoto(material.id, "foto2")}
-                              className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded hover:bg-red-600"
+                              className="absolute -top-2 -right-2 bg-red-500 text-white p-1 rounded-full hover:bg-red-600 shadow-md"
                             >
-                              <X size={16} />
+                              <X size={14} />
                             </button>
                           </div>
                         ) : (
                           <div className="flex gap-2">
                             <button
                               type="button"
-                              onClick={() =>
-                                triggerFileInput(material.id, "foto2", "gallery")
-                              }
-                              className="flex-1 flex items-center justify-center gap-2 p-2 border border-gray-300 rounded hover:bg-gray-100 text-sm"
+                              onClick={() => triggerFileInput(material.id, "foto2", "gallery")}
+                              className="flex-1 flex items-center justify-center gap-2 p-3 border-2 border-dashed border-slate-300 rounded-lg hover:border-blue-400 hover:bg-blue-50 text-sm font-medium text-slate-700 transition-colors"
                             >
-                              <ImageIcon size={16} />
+                              <ImageIcon size={18} />
                               Galeria
                             </button>
                             <button
                               type="button"
-                              onClick={() =>
-                                triggerFileInput(material.id, "foto2", "camera")
-                              }
-                              className="flex-1 flex items-center justify-center gap-2 p-2 border border-gray-300 rounded hover:bg-gray-100 text-sm"
+                              onClick={() => triggerFileInput(material.id, "foto2", "camera")}
+                              className="flex-1 flex items-center justify-center gap-2 p-3 border-2 border-dashed border-slate-300 rounded-lg hover:border-blue-400 hover:bg-blue-50 text-sm font-medium text-slate-700 transition-colors"
                             >
-                              <Camera size={16} />
+                              <Camera size={18} />
                               Câmera
                             </button>
                           </div>
                         )}
-                        {/* Inputs escondidos */}
                         <input
                           ref={(el) => {
                             if (!fileInputRefs.current[material.id]) {
@@ -854,9 +751,7 @@ export default function SolicitacaoForm() {
                           type="file"
                           accept="image/*"
                           style={{ display: "none" }}
-                          onChange={(e) =>
-                            handleFileSelect(material.id, "foto2", e.target.files?.[0])
-                          }
+                          onChange={(e) => handleFileSelect(material.id, "foto2", e.target.files?.[0])}
                         />
                         <input
                           ref={(el) => {
@@ -869,9 +764,7 @@ export default function SolicitacaoForm() {
                           accept="image/*"
                           capture="environment"
                           style={{ display: "none" }}
-                          onChange={(e) =>
-                            handleFileSelect(material.id, "foto2", e.target.files?.[0])
-                          }
+                          onChange={(e) => handleFileSelect(material.id, "foto2", e.target.files?.[0])}
                         />
                       </div>
                     </div>
@@ -880,128 +773,93 @@ export default function SolicitacaoForm() {
               ))}
 
               {/* Botão Adicionar Material */}
-              <Button
+              <button
                 type="button"
-                variant="outline"
-                onClick={handleAddMaterial}
-                className="w-full"
+                onClick={addMaterial}
+                className="w-full flex items-center justify-center gap-2 p-3 border-2 border-dashed border-blue-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 text-sm font-medium text-blue-600 transition-colors"
               >
-                <Plus size={18} className="mr-2" />
+                <Plus size={18} />
                 Adicionar Material
-              </Button>
+              </button>
             </div>
-          </Card>
+          </div>
+        </Card>
 
-          {/* Botão Enviar */}
+        {/* ESPAÇO PARA BOTÃO STICKY */}
+        <div className="h-4" />
+      </form>
+
+      {/* BOTÃO STICKY BOTTOM */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-lg">
+        <div className="max-w-2xl mx-auto px-4 py-4">
           <Button
             type="submit"
+            onClick={handleSubmit}
             disabled={isSubmitting}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-6 text-lg font-semibold"
+            className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-base rounded-lg flex items-center justify-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isSubmitting ? (
               <>
-                <Loader2 size={20} className="mr-2 animate-spin" />
+                <Loader2 size={20} className="animate-spin" />
                 Enviando...
               </>
             ) : (
               "Enviar Solicitação"
             )}
           </Button>
-        </form>
+        </div>
+      </div>
 
-        {/* Modal de Diagnóstico */}
-        {showDiagnosticModal && diagnosticResult && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <Card className="w-full max-w-2xl max-h-96 overflow-y-auto">
-              <div className="p-6">
-                <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-xl font-bold">Diagnóstico do Webhook</h2>
-                  <button
-                    onClick={() => setShowDiagnosticModal(false)}
-                    className="text-gray-500 hover:text-gray-700"
-                  >
-                    <X size={24} />
-                  </button>
+      {/* MODAL DE DIAGNÓSTICO */}
+      {showDiagnosticModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <Card className="w-full max-w-md p-6">
+            <h3 className="text-lg font-semibold text-slate-900 mb-4">Diagnosticar Webhook</h3>
+            {diagnosticResult ? (
+              <div className="space-y-3 mb-4 max-h-64 overflow-y-auto text-sm">
+                <div>
+                  <p className="font-medium text-slate-700">URL:</p>
+                  <p className="text-slate-600 break-all">{diagnosticResult.url}</p>
                 </div>
-
-                <div className="space-y-3 text-sm">
-                  <div>
-                    <p className="font-semibold text-gray-700">URL (mascarada):</p>
-                    <p className="text-gray-600 break-all font-mono">{diagnosticResult.urlMasked}</p>
-                  </div>
-
-                  {diagnosticResult.status !== null && (
-                    <div>
-                      <p className="font-semibold text-gray-700">Status HTTP:</p>
-                      <p className="text-gray-600">{diagnosticResult.status}</p>
-                    </div>
-                  )}
-
-                  {diagnosticResult.contentType && (
-                    <div>
-                      <p className="font-semibold text-gray-700">Content-Type:</p>
-                      <p className="text-gray-600">{diagnosticResult.contentType}</p>
-                    </div>
-                  )}
-
-                  {diagnosticResult.isHtml && (
-                    <div className="bg-red-50 border border-red-200 p-3 rounded">
-                      <p className="font-semibold text-red-700">❌ Webhook retornou HTML</p>
-                      <p className="text-red-600 text-xs mt-1">
-                        Provável causa: Apps Script não está publicado como Web App público (Anyone) ou URL incorreta.
-                      </p>
-                    </div>
-                  )}
-
-                  {diagnosticResult.parsedJson && (
-                    <div>
-                      <p className="font-semibold text-gray-700">Resposta JSON:</p>
-                      <pre className="bg-gray-100 p-2 rounded text-xs overflow-x-auto">
-                        {JSON.stringify(diagnosticResult.parsedJson, null, 2)}
-                      </pre>
-                    </div>
-                  )}
-
-                  {diagnosticResult.bodySnippet && (
-                    <div>
-                      <p className="font-semibold text-gray-700">Body (primeiros 500 chars):</p>
-                      <pre className="bg-gray-100 p-2 rounded text-xs overflow-x-auto">
-                        {diagnosticResult.bodySnippet}
-                      </pre>
-                    </div>
-                  )}
-
-                  {diagnosticResult.error && (
-                    <div className="bg-yellow-50 border border-yellow-200 p-3 rounded">
-                      <p className="font-semibold text-yellow-700">⚠️ Erro:</p>
-                      <p className="text-yellow-600 text-xs mt-1">{diagnosticResult.error}</p>
-                    </div>
-                  )}
+                <div>
+                  <p className="font-medium text-slate-700">Status:</p>
+                  <p className={diagnosticResult.status === 200 ? "text-green-600" : "text-red-600"}>
+                    {diagnosticResult.status}
+                  </p>
                 </div>
-
-                <div className="mt-4 flex gap-2">
-                  <Button
-                    onClick={() => {
-                      navigator.clipboard.writeText(JSON.stringify(diagnosticResult, null, 2));
-                      toast.success("Diagnóstico copiado para clipboard");
-                    }}
-                    variant="outline"
-                    className="flex-1"
-                  >
-                    Copiar Resultado
-                  </Button>
-                  <Button
-                    onClick={() => setShowDiagnosticModal(false)}
-                    className="flex-1"
-                  >
-                    Fechar
-                  </Button>
+                <div>
+                  <p className="font-medium text-slate-700">Content-Type:</p>
+                  <p className="text-slate-600">{diagnosticResult.contentType}</p>
+                </div>
+                <div>
+                  <p className="font-medium text-slate-700">Snippet:</p>
+                  <p className="text-slate-600 bg-slate-100 p-2 rounded font-mono text-xs">
+                    {diagnosticResult.bodySnippet}
+                  </p>
                 </div>
               </div>
-            </Card>
-          </div>
-        )}
-      </div>
+            ) : (
+              <p className="text-slate-600 mb-4">Clique em "Diagnosticar" para testar a conexão com o webhook.</p>
+            )}
+            <div className="flex gap-2">
+              <Button
+                onClick={() => {}}
+                disabled={isDiagnosing}
+                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                {isDiagnosing ? "Diagnosticando..." : "Diagnosticar"}
+              </Button>
+              <Button
+                onClick={() => setShowDiagnosticModal(false)}
+                variant="outline"
+                className="flex-1"
+              >
+                Fechar
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }
