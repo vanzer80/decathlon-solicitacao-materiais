@@ -281,3 +281,53 @@ Para problemas ou dúvidas:
 **Versão**: 1.0.0  
 **Última atualização**: 30 de janeiro de 2026  
 **Status**: Production-ready
+
+
+## 📸 Upload de Fotos (Câmera e Galeria)
+
+Para cada material, é possível anexar até 2 fotos. O app oferece duas opções de captura:
+
+**Galeria**: Abre o gerenciador de arquivos/fotos do dispositivo. Ideal para fotos já existentes.
+
+**Câmera**: Ativa a câmera do dispositivo para tirar uma foto em tempo real. Ideal para documentar o problema no local.
+
+### Requisitos de Foto
+
+- **Formatos aceitos**: JPEG, PNG, GIF, WebP
+- **Tamanho máximo**: 5MB por foto
+- **Total**: até 2 fotos por material
+
+### Como usar
+
+1. Preencha os dados do material (descrição, quantidade, etc)
+2. Clique em "Galeria" para escolher uma foto existente OU "Câmera" para tirar uma foto
+3. Selecione a foto desejada
+4. A foto aparecerá como preview
+5. Para remover, clique no X sobre a foto
+6. Repita para a segunda foto (se necessário)
+7. Envie a solicitação
+
+### Dicas Mobile
+
+- **Android**: Conceda permissão de câmera e armazenamento quando solicitado
+- **iOS**: Conceda permissão de câmera quando solicitado
+- **Orientação**: A câmera funciona em qualquer orientação (retrato ou paisagem)
+- **Iluminação**: Certifique-se de boa iluminação para fotos claras
+
+## 🔧 Notas Técnicas (Upload)
+
+O app não usa Buffer no frontend (evita problemas de compatibilidade com navegador). Em vez disso:
+
+1. Fotos são selecionadas como `File` objects
+2. Validação de tipo e tamanho ocorre no frontend
+3. Preview é gerado com `URL.createObjectURL()`
+4. Ao enviar, o arquivo é convertido para `ArrayBuffer` e enviado ao backend
+5. Backend faz upload para S3 e retorna URL pública
+6. URLs são incluídas no payload do webhook
+
+### Segurança
+
+- Validação de tipo MIME (apenas image/*)
+- Validação de tamanho (máx 5MB)
+- URLs de fotos são públicas (sem autenticação)
+- Nenhum dado sensível é armazenado nas fotos

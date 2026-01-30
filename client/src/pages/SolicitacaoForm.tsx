@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -14,7 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { LojaOption } from "@shared/types";
-import { Loader2, Trash2, Plus } from "lucide-react";
+import { Loader2, Trash2, Plus, Camera, Image as ImageIcon, X } from "lucide-react";
 
 interface MaterialItem {
   id: string;
@@ -24,7 +24,9 @@ interface MaterialItem {
   unidade: string;
   urgencia: string;
   foto1?: File;
+  foto1Preview?: string;
   foto2?: File;
+  foto2Preview?: string;
 }
 
 export default function SolicitacaoForm() {
@@ -42,6 +44,9 @@ export default function SolicitacaoForm() {
     },
   ]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Refs para inputs de câmera e galeria
+  const fileInputRefs = useRef<Record<string, Record<string, HTMLInputElement | null>>>({});
 
   // Formulário principal
   const [formData, setFormData] = useState({
@@ -96,14 +101,100 @@ export default function SolicitacaoForm() {
 
   const handleRemoveMaterial = (id: string) => {
     if (materials.length > 1) {
+      // Limpar previews
+      const material = materials.find((m) => m.id === id);
+      if (material?.foto1Preview) {
+        URL.revokeObjectURL(material.foto1Preview);
+      }
+      if (material?.foto2Preview) {
+        URL.revokeObjectURL(material.foto2Preview);
+      }
       setMaterials((prev) => prev.filter((m) => m.id !== id));
     }
   };
 
-  const handleFileChange = (id: string, field: string, file: File | undefined) => {
-    handleMaterialChange(id, field, file);
+  const handleFileSelect = (
+    materialId: string,
+    fotoSlot: "foto1" | "foto2",
+    file: File | undefined
+  ) => {
+    if (!file) return;
+
+    // Validar tipo
+    if (!file.type.startsWith("image/")) {
+      toast.error("Apenas imagens são permitidas");
+      return;
+    }
+
+    // Validar tamanho (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Arquivo muito grande (máx 5MB)");
+      return;
+    }
+
+    // Criar preview
+    const previewUrl = URL.createObjectURL(file);
+
+    setMaterials((prev) =>
+      prev.map((m) => {
+        if (m.id === materialId) {
+          // Revogar URL anterior se existir
+          if (fotoSlot === "foto1" && m.foto1Preview) {
+            URL.revokeObjectURL(m.foto1Preview);
+          }
+          if (fotoSlot === "foto2" && m.foto2Preview) {
+            URL.revokeObjectURL(m.foto2Preview);
+          }
+
+          return {
+            ...m,
+            [fotoSlot]: file,
+            [`${fotoSlot}Preview`]: previewUrl,
+          };
+        }
+        return m;
+      })
+    );
+
+    toast.success(`Foto adicionada: ${file.name}`);
   };
 
+  const handleRemovePhoto = (materialId: string, fotoSlot: "foto1" | "foto2") => {
+    setMaterials((prev) =>
+      prev.map((m) => {
+        if (m.id === materialId) {
+          const previewKey = `${fotoSlot}Preview` as const;
+          if (m[previewKey]) {
+            URL.revokeObjectURL(m[previewKey]);
+          }
+          return {
+            ...m,
+            [fotoSlot]: undefined,
+            [previewKey]: undefined,
+          };
+        }
+        return m;
+      })
+    );
+  };
+
+  const triggerFileInput = (
+    materialId: string,
+    fotoSlot: "foto1" | "foto2",
+    inputType: "gallery" | "camera"
+  ) => {
+    if (!fileInputRefs.current[materialId]) {
+      fileInputRefs.current[materialId] = {};
+    }
+
+    const key = `${fotoSlot}-${inputType}`;
+    const input = fileInputRefs.current[materialId][key];
+    if (input) {
+      input.click();
+    }
+  };
+
+  const uploadMutation = trpc.upload.uploadPhoto.useMutation();
   const submitMutation = trpc.solicitacoes.submit.useMutation();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -145,24 +236,40 @@ export default function SolicitacaoForm() {
     setIsSubmitting(true);
 
     try {
-      // Processa fotos
+      // Processa fotos e monta payload
       const itemsWithPhotos = await Promise.all(
         materials.map(async (material) => {
-          let foto1: Buffer | undefined;
-          let foto1_type: string | undefined;
-          let foto2: Buffer | undefined;
-          let foto2_type: string | undefined;
+          let foto1_url = "";
+          let foto2_url = "";
 
           if (material.foto1) {
-            const buffer = await material.foto1.arrayBuffer();
-            foto1 = Buffer.from(buffer);
-            foto1_type = material.foto1.type;
+            try {
+              const arrayBuffer = await material.foto1.arrayBuffer();
+              const result = await uploadMutation.mutateAsync({
+                fileName: `foto1-${material.id}-${Date.now()}`,
+                fileData: Buffer.from(arrayBuffer),
+                mimeType: material.foto1.type || "image/jpeg",
+              });
+              foto1_url = result.url || "";
+            } catch (error) {
+              console.error("Erro ao fazer upload de foto1:", error);
+              toast.error("Erro ao fazer upload de foto");
+            }
           }
 
           if (material.foto2) {
-            const buffer = await material.foto2.arrayBuffer();
-            foto2 = Buffer.from(buffer);
-            foto2_type = material.foto2.type;
+            try {
+              const arrayBuffer = await material.foto2.arrayBuffer();
+              const result = await uploadMutation.mutateAsync({
+                fileName: `foto2-${material.id}-${Date.now()}`,
+                fileData: Buffer.from(arrayBuffer),
+                mimeType: material.foto2.type || "image/jpeg",
+              });
+              foto2_url = result.url || "";
+            } catch (error) {
+              console.error("Erro ao fazer upload de foto2:", error);
+              toast.error("Erro ao fazer upload de foto");
+            }
           }
 
           return {
@@ -171,10 +278,10 @@ export default function SolicitacaoForm() {
             quantidade: material.quantidade,
             unidade: material.unidade as "un" | "cx" | "par" | "m" | "kg" | "L" | "rolo" | "kit" | "outro",
             urgencia: material.urgencia as "Alta" | "Média" | "Baixa",
-            foto1,
-            foto1_type,
-            foto2,
-            foto2_type,
+            foto1: undefined as any,
+            foto1_type: undefined,
+            foto2: undefined as any,
+            foto2_type: undefined,
           };
         })
       );
@@ -186,6 +293,7 @@ export default function SolicitacaoForm() {
         solicitante_telefone: formData.solicitante_telefone,
         numero_chamado: formData.numero_chamado,
         tipo_equipe: formData.tipo_equipe as "Própria" | "Terceirizada",
+        empresa_terceira: formData.empresa_terceira,
         tipo_servico: formData.tipo_servico as "Preventiva" | "Corretiva",
         sistema_afetado: formData.sistema_afetado as "HVAC" | "Elétrica" | "Hidráulica" | "Civil" | "PPCI" | "Outros",
         descricao_geral_servico: formData.descricao_geral_servico,
@@ -581,47 +689,158 @@ export default function SolicitacaoForm() {
                       </Select>
                     </div>
 
-                    {/* Fotos */}
+                    {/* Fotos com Câmera e Galeria */}
                     <div className="grid grid-cols-2 gap-3">
+                      {/* Foto 1 */}
                       <div>
-                        <Label className="text-sm text-gray-700">Foto 1</Label>
-                        <Input
+                        <Label className="text-sm text-gray-700 block mb-2">
+                          Foto 1
+                        </Label>
+                        {material.foto1Preview ? (
+                          <div className="relative">
+                            <img
+                              src={material.foto1Preview}
+                              alt="Preview foto 1"
+                              className="w-full h-32 object-cover rounded border border-gray-300"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => handleRemovePhoto(material.id, "foto1")}
+                              className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded hover:bg-red-600"
+                            >
+                              <X size={16} />
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex gap-2">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                triggerFileInput(material.id, "foto1", "gallery")
+                              }
+                              className="flex-1 flex items-center justify-center gap-2 p-2 border border-gray-300 rounded hover:bg-gray-100 text-sm"
+                            >
+                              <ImageIcon size={16} />
+                              Galeria
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                triggerFileInput(material.id, "foto1", "camera")
+                              }
+                              className="flex-1 flex items-center justify-center gap-2 p-2 border border-gray-300 rounded hover:bg-gray-100 text-sm"
+                            >
+                              <Camera size={16} />
+                              Câmera
+                            </button>
+                          </div>
+                        )}
+                        {/* Inputs escondidos */}
+                        <input
+                          ref={(el) => {
+                            if (!fileInputRefs.current[material.id]) {
+                              fileInputRefs.current[material.id] = {};
+                            }
+                            fileInputRefs.current[material.id]["foto1-gallery"] = el;
+                          }}
                           type="file"
                           accept="image/*"
+                          style={{ display: "none" }}
                           onChange={(e) =>
-                            handleFileChange(
-                              material.id,
-                              "foto1",
-                              e.target.files?.[0]
-                            )
+                            handleFileSelect(material.id, "foto1", e.target.files?.[0])
                           }
-                          className="mt-1"
                         />
-                        {material.foto1 && (
-                          <p className="text-xs text-green-600 mt-1">
-                            ✓ {material.foto1.name}
-                          </p>
-                        )}
+                        <input
+                          ref={(el) => {
+                            if (!fileInputRefs.current[material.id]) {
+                              fileInputRefs.current[material.id] = {};
+                            }
+                            fileInputRefs.current[material.id]["foto1-camera"] = el;
+                          }}
+                          type="file"
+                          accept="image/*"
+                          capture="environment"
+                          style={{ display: "none" }}
+                          onChange={(e) =>
+                            handleFileSelect(material.id, "foto1", e.target.files?.[0])
+                          }
+                        />
                       </div>
+
+                      {/* Foto 2 */}
                       <div>
-                        <Label className="text-sm text-gray-700">Foto 2</Label>
-                        <Input
+                        <Label className="text-sm text-gray-700 block mb-2">
+                          Foto 2
+                        </Label>
+                        {material.foto2Preview ? (
+                          <div className="relative">
+                            <img
+                              src={material.foto2Preview}
+                              alt="Preview foto 2"
+                              className="w-full h-32 object-cover rounded border border-gray-300"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => handleRemovePhoto(material.id, "foto2")}
+                              className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded hover:bg-red-600"
+                            >
+                              <X size={16} />
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex gap-2">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                triggerFileInput(material.id, "foto2", "gallery")
+                              }
+                              className="flex-1 flex items-center justify-center gap-2 p-2 border border-gray-300 rounded hover:bg-gray-100 text-sm"
+                            >
+                              <ImageIcon size={16} />
+                              Galeria
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                triggerFileInput(material.id, "foto2", "camera")
+                              }
+                              className="flex-1 flex items-center justify-center gap-2 p-2 border border-gray-300 rounded hover:bg-gray-100 text-sm"
+                            >
+                              <Camera size={16} />
+                              Câmera
+                            </button>
+                          </div>
+                        )}
+                        {/* Inputs escondidos */}
+                        <input
+                          ref={(el) => {
+                            if (!fileInputRefs.current[material.id]) {
+                              fileInputRefs.current[material.id] = {};
+                            }
+                            fileInputRefs.current[material.id]["foto2-gallery"] = el;
+                          }}
                           type="file"
                           accept="image/*"
+                          style={{ display: "none" }}
                           onChange={(e) =>
-                            handleFileChange(
-                              material.id,
-                              "foto2",
-                              e.target.files?.[0]
-                            )
+                            handleFileSelect(material.id, "foto2", e.target.files?.[0])
                           }
-                          className="mt-1"
                         />
-                        {material.foto2 && (
-                          <p className="text-xs text-green-600 mt-1">
-                            ✓ {material.foto2.name}
-                          </p>
-                        )}
+                        <input
+                          ref={(el) => {
+                            if (!fileInputRefs.current[material.id]) {
+                              fileInputRefs.current[material.id] = {};
+                            }
+                            fileInputRefs.current[material.id]["foto2-camera"] = el;
+                          }}
+                          type="file"
+                          accept="image/*"
+                          capture="environment"
+                          style={{ display: "none" }}
+                          onChange={(e) =>
+                            handleFileSelect(material.id, "foto2", e.target.files?.[0])
+                          }
+                        />
                       </div>
                     </div>
                   </div>

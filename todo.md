@@ -39,3 +39,16 @@
 ## Deploy
 - [ ] Publicar app
 - [ ] Verificar integração com webhook
+
+
+## Correções e Melhorias (Sprint 2)
+- [x] Remover uso de Buffer do frontend
+- [x] Implementar upload via tRPC para endpoint de upload
+- [x] Adicionar suporte a câmera (capture="environment")
+- [x] Adicionar suporte a galeria (input file normal)
+- [x] Implementar preview de fotos com URL.createObjectURL
+- [x] Adicionar validação de tipo e tamanho no frontend
+- [x] Atualizar README com instruções de câmera/galeria
+- [ ] Testar envio sem fotos
+- [ ] Testar envio com foto da câmera
+- [ ] Testar envio com foto da galeria
