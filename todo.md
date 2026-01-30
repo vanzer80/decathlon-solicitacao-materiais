@@ -52,3 +52,6 @@
 - [x] Adicionar instruções de teste com USE_MOCK_WEBHOOK
 - [ ] Testar envio com modo mock ativado
 - [ ] Testar envio com webhook real (após configurar URL)
+
+## Correções Sprint 3
+- [x] Corrigir validação de loja_id para aceitar 0 (ESCRITÓRIO)

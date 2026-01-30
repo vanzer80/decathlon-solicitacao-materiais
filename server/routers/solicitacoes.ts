@@ -19,7 +19,7 @@ const MaterialItemSchema = z.object({
 });
 
 const SolicitacaoSchema = z.object({
-  loja_id: z.number().int().positive("Loja é obrigatória"),
+  loja_id: z.number().int().min(0, "Loja é obrigatória"),
   loja_label: z.string().min(1, "Label da loja é obrigatório"),
   solicitante_nome: z.string().min(1, "Nome do solicitante é obrigatório"),
   solicitante_telefone: z.string().optional().default(""),
