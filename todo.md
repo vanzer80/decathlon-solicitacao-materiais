@@ -1,4 +1,4 @@
-# Solicitação de Materiais - Decathlon (TODO)
+# Solicitação de Materiais - MOPAR (TODO)
 
 ## Backend
 - [x] Configurar variáveis de ambiente (WEBHOOK_URL, WEBHOOK_TOKEN)
@@ -22,7 +22,7 @@
 - [x] Upload de fotos (até 2 por material, máx 5MB)
 - [x] Tela de sucesso com Request_ID
 - [x] Botão "Nova Solicitação" na tela de sucesso
-- [x] Design mobile-first com Decathlon style (azul #0082C3)
+- [x] Design mobile-first com MOPAR style (azul #0082C3)
 - [x] Feedback visual de validação
 
 ## Testes
@@ -69,3 +69,26 @@
 - [x] Testar diagnóstico com webhook real - Status 200, JSON válido
 - [x] Testar envio com webhook real funcionando
 - [x] Testar retry em caso de falha de rede
+
+
+## Sprint 5 - Dashboard de Histórico
+- [ ] Criar rota tRPC para listar solicitações com filtros
+- [ ] Implementar filtro por data (data inicial e final)
+- [ ] Implementar filtro por loja
+- [ ] Implementar filtro por status (enviada, pendente, etc)
+- [ ] Implementar busca por Request_ID
+- [ ] Criar componente de tabela com paginação
+- [ ] Adicionar visualização de detalhes da solicitação
+- [ ] Adicionar visualização de fotos anexadas
+- [ ] Implementar ordenação por data, loja, status
+- [ ] Adicionar botão de reenvio de solicitação
+- [ ] Criar testes para filtros e listagem
+- [ ] Adicionar rota no App.tsx para /historico
+
+
+## Sprint 6 - Rebranding MOPAR → MOPAR
+- [ ] Substituir "MOPAR" por "MOPAR" em todos os arquivos
+- [x] Atualizar título da página
+- [x] Atualizar descrições
+- [x] Atualizar nomes de variáveis e constantes
+- [x] Atualizar comentários e documentação

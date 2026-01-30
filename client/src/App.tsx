@@ -6,6 +6,7 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import SolicitacaoForm from "./pages/SolicitacaoForm";
 import SuccessPage from "./pages/SuccessPage";
+import Historico from "./pages/Historico";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -13,6 +14,7 @@ function Router() {
     <Switch>
       <Route path="/" component={SolicitacaoForm} />
       <Route path="/sucesso" component={SuccessPage} />
+      <Route path="/historico" component={Historico} />
       <Route path="/404" component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />

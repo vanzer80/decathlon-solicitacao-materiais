@@ -5,6 +5,7 @@ import { publicProcedure, router } from "./_core/trpc";
 import { solicitacoesRouter } from "./routers/solicitacoes";
 import { uploadRouter } from "./routers/upload";
 import { webhookRouter } from "./routers/webhook";
+import { historicoRouter } from "./routers/historico";
 
 export const appRouter = router({
     // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
@@ -23,6 +24,7 @@ export const appRouter = router({
   solicitacoes: solicitacoesRouter,
   upload: uploadRouter,
   webhook: webhookRouter,
+  historico: historicoRouter,
 });
 
 

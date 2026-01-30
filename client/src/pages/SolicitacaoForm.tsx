@@ -342,7 +342,7 @@ export default function SolicitacaoForm() {
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
             Solicitação de Materiais
           </h1>
-          <p className="text-gray-600">Decathlon - Técnicos de Campo</p>
+          <p className="text-gray-600">MOPAR - Técnicos de Campo</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">

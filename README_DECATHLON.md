@@ -1,4 +1,4 @@
-# Solicitação de Materiais - Decathlon
+# Solicitação de Materiais - MOPAR
 
 Web app público, mobile-first, para técnicos de campo solicitarem materiais com integração ao Google Apps Script.
 
@@ -38,7 +38,7 @@ Crie um arquivo `.env.local` na raiz do projeto:
 WEBHOOK_URL=https://script.google.com/macros/s/AKfycby9oLYJI9mJqSDOEi6kQQELU7naTfjpesQIYyfRvS8/exec
 WEBHOOK_TOKEN=DECATHLON-2026
 USE_MOCK_WEBHOOK=false
-DATABASE_URL=mysql://user:password@localhost:3306/decathlon
+DATABASE_URL=mysql://user:password@localhost:3306/mopar
 ```
 
 ## 🏗️ Arquitetura
@@ -211,7 +211,7 @@ Exibir tela de sucesso com Request_ID
 ## 📝 Estrutura do Projeto
 
 ```
-decathlon-solicitacao-materiais/
+mopar-solicitacao-materiais/
 ├── client/
 │   ├── public/
 │   │   └── lojas.json                    # Lista de lojas (dropdown)
@@ -264,7 +264,7 @@ decathlon-solicitacao-materiais/
 ## 🎨 Design
 
 - **Mobile-first**: otimizado para telas pequenas
-- **Cores**: azul Decathlon (#0082C3) como cor primária
+- **Cores**: azul MOPAR (#0082C3) como cor primária
 - **Cards**: layout em seções para melhor organização
 - **Feedback**: validação por campo, toasts de sucesso/erro
 

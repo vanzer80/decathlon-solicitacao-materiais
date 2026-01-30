@@ -90,6 +90,13 @@ export default function SuccessPage() {
           </Button>
           <Button
             variant="outline"
+            onClick={() => navigate("/historico")}
+            className="w-full"
+          >
+            Ver Histórico
+          </Button>
+          <Button
+            variant="ghost"
             onClick={() => window.history.back()}
             className="w-full"
           >
@@ -99,7 +106,7 @@ export default function SuccessPage() {
 
         {/* Footer */}
         <p className="text-xs text-gray-500 mt-6">
-          Decathlon - Solicitação de Materiais
+          MOPAR - Solicitação de Materiais
         </p>
       </Card>
     </div>
