@@ -66,6 +66,6 @@
 - [x] Adicionar modal de diagnóstico no frontend
 - [x] Adicionar botão "Diagnosticar Webhook" em caso de erro
 - [x] Melhorar mensagens de erro com detalhes específicos
-- [ ] Testar diagnóstico com webhook real
-- [ ] Testar envio com webhook real funcionando
-- [ ] Testar retry em caso de falha de rede
+- [x] Testar diagnóstico com webhook real - Status 200, JSON válido
+- [x] Testar envio com webhook real funcionando
+- [x] Testar retry em caso de falha de rede
