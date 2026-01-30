@@ -302,6 +302,8 @@ export default function SolicitacaoForm() {
             foto1_type: undefined,
             foto2: undefined as any,
             foto2_type: undefined,
+            foto1_url: foto1_url,
+            foto2_url: foto2_url,
           };
         })
       );

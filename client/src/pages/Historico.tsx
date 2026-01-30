@@ -109,9 +109,26 @@ export default function Historico() {
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white p-4">
       <div className="max-w-6xl mx-auto">
         {/* Cabeçalho */}
-        <div className="text-center mb-8 pt-6">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Histórico de Solicitações</h1>
-          <p className="text-gray-600">Consulte e filtre suas solicitações anteriores</p>
+        <div className="flex items-center justify-between mb-8 pt-6">
+          <div className="flex-1">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Histórico de Solicitações</h1>
+            <p className="text-gray-600">Consulte e filtre suas solicitações anteriores</p>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => window.history.back()}
+              className="whitespace-nowrap"
+            >
+              ← Voltar
+            </Button>
+            <Button
+              onClick={() => window.location.href = "/"}
+              className="whitespace-nowrap"
+            >
+              + Nova Solicitação
+            </Button>
+          </div>
         </div>
 
         {/* Filtros */}
@@ -144,11 +161,10 @@ export default function Historico() {
             <div>
               <Label className="text-sm text-gray-700">Loja</Label>
               <Select value={filtros.loja_id} onValueChange={(val) => handleFiltroChange("loja_id", val)}>
-                <SelectTrigger className="mt-1">
+                <SelectTrigger className="mt-1 cursor-pointer">
                   <SelectValue placeholder="Todas" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todas</SelectItem>
                   {lojas.map((loja) => (
                     <SelectItem key={loja.Loja_ID} value={loja.Loja_ID.toString()}>
                       {loja.Loja_Label}

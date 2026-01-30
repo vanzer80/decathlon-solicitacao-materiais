@@ -16,6 +16,8 @@ const MaterialItemSchema = z.object({
   foto1_type: z.string().optional(),
   foto2: z.instanceof(Buffer).optional(),
   foto2_type: z.string().optional(),
+  foto1_url: z.string().optional().default(""),
+  foto2_url: z.string().optional().default(""),
 });
 
 const SolicitacaoSchema = z.object({
@@ -60,17 +62,17 @@ export const solicitacoesRouter = router({
         // Processa fotos e monta payload
         const items = await Promise.all(
           input.items.map(async (item) => {
-            let foto1_url = "";
-            let foto2_url = "";
+            let foto1_url = item.foto1_url || "";
+            let foto2_url = item.foto2_url || "";
 
-            if (item.foto1 && item.foto1_type) {
+            if (!foto1_url && item.foto1 && item.foto1_type) {
               const result = await uploadPhoto(item.foto1, item.foto1_type, `foto1-${requestId}`);
               if (result.success && result.url) {
                 foto1_url = result.url;
               }
             }
 
-            if (item.foto2 && item.foto2_type) {
+            if (!foto2_url && item.foto2 && item.foto2_type) {
               const result = await uploadPhoto(item.foto2, item.foto2_type, `foto2-${requestId}`);
               if (result.success && result.url) {
                 foto2_url = result.url;

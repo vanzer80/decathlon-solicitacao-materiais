@@ -50,6 +50,17 @@ export async function submitToWebhook(
       bodySnippet,
     });
 
+    // Log detalhado do payload enviado (para debug de imagens)
+    console.log("[Webhook] Payload enviado:", {
+      request_id: payload.request_id,
+      items_count: payload.items.length,
+      items_com_fotos: payload.items.map((item) => ({
+        descricao: item.material_descricao,
+        foto1: item.foto1_url ? "✓" : "✗",
+        foto2: item.foto2_url ? "✓" : "✗",
+      })),
+    });
+
     // Verifica se a resposta é HTML (erro de URL/publicação)
     if (isHtmlResponse(responseText)) {
       const errorMsg = `Webhook retornou HTML (status ${response.status}, content-type: ${contentType}). ` +

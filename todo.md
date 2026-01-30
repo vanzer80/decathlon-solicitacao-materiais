@@ -92,3 +92,12 @@
 - [x] Atualizar descrições
 - [x] Atualizar nomes de variáveis e constantes
 - [x] Atualizar comentários e documentação
+
+
+## Sprint 7 - Correção de Envio de Imagens
+- [x] Verificar se as URLs das fotos estão sendo geradas corretamente
+- [x] Verificar se as URLs estão sendo incluídas no payload do webhook
+- [x] Testar envio de imagens com webhook real
+- [x] Validar que as URLs chegam na planilha do Google Sheets
+- [x] Adicionar botões de voltar e nova solicitação no histórico
+- [x] Fazer dropdown de lojas abrir automaticamente ao clicar
