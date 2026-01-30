@@ -101,3 +101,11 @@
 - [x] Validar que as URLs chegam na planilha do Google Sheets
 - [x] Adicionar botões de voltar e nova solicitação no histórico
 - [x] Fazer dropdown de lojas abrir automaticamente ao clicar
+
+
+## Sprint 8 - Correção de Câmera
+- [x] Corrigir botão de câmera para acionar câmera do dispositivo
+- [x] Usar capture="environment" para câmera traseira
+- [x] Melhorar função triggerFileInput com setAttribute dinâmico
+- [x] Adicionar reset de input para permitir mesmo arquivo novamente
+- [ ] Testar em dispositivo mobile

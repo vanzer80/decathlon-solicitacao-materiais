@@ -206,8 +206,17 @@ export default function SolicitacaoForm() {
     }
 
     const key = `${fotoSlot}-${inputType}`;
-    const input = fileInputRefs.current[materialId][key];
+    const input = fileInputRefs.current[materialId][key] as HTMLInputElement | null;
     if (input) {
+      // Reset o input para permitir selecionar o mesmo arquivo novamente
+      input.value = "";
+      // Garante que o atributo capture está presente
+      if (inputType === "camera") {
+        input.setAttribute("capture", "environment");
+      } else {
+        input.removeAttribute("capture");
+      }
+      // Dispara o clique
       input.click();
     }
   };
@@ -772,6 +781,7 @@ export default function SolicitacaoForm() {
                             handleFileSelect(material.id, "foto1", e.target.files?.[0])
                           }
                         />
+                        {/* Input de câmera com capture */}
                         <input
                           ref={(el) => {
                             if (!fileInputRefs.current[material.id]) {
