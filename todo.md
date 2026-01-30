@@ -152,3 +152,15 @@
 - [x] Testes automatizados (25 testes passando)
 - [ ] Smoke test: enviar sem foto
 - [ ] Smoke test: enviar com foto da câmera
+
+
+## Sprint 13 - Documentação Completa
+- [x] Criar README.md (técnico completo)
+- [x] Criar docs/MANUAL_USUARIO.md
+- [x] Criar docs/RUNBOOK_TROUBLESHOOTING.md
+- [x] Criar .env.example (via webdev_request_secrets)
+- [x] Criar docs/ARQUITETURA.md
+- [x] Criar docs/CONTRATO_WEBHOOK.md
+- [x] Criar docs/ROADMAP.md
+- [x] Verificar todos os arquivos
+- [x] Confirmar caminhos
