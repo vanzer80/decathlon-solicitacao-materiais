@@ -794,32 +794,33 @@ export default function SolicitacaoForm() {
           </div>
         </Card>
 
-        {/* ESPAÇO PARA BOTÃO STICKY */}
+        {/* BOTÃO STICKY BOTTOM */}
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-lg">
+          <div className="max-w-2xl mx-auto px-4 py-4">
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="w-full h-12 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold text-base rounded-lg flex items-center justify-center gap-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-blue-600 shadow-md hover:shadow-lg active:shadow-sm"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Enviando...
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="w-5 h-5" />
+                  Enviar Solicitação
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+
         <div className="h-4" />
       </form>
 
-      {/* BOTÃO STICKY BOTTOM */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-lg">
-        <div className="max-w-2xl mx-auto px-4 py-4">
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="w-full h-12 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold text-base rounded-lg flex items-center justify-center gap-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-blue-600 shadow-md hover:shadow-lg active:shadow-sm"
-          >
-            {isSubmitting ? (
-              <>
-                <Loader2 className="w-5 h-5 animate-spin" />
-                Enviando...
-              </>
-            ) : (
-              <>
-                <CheckCircle2 className="w-5 h-5" />
-                Enviar Solicitação
-              </>
-            )}
-          </button>
-        </div>
-      </div>
+
 
       {/* MODAL DIAGNÓSTICO */}
       {showDiagnosticModal && (

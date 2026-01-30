@@ -142,3 +142,13 @@
 - [x] Testes automatizados (25 testes passando)
 - [ ] Smoke test: enviar sem foto
 - [ ] Smoke test: enviar com foto da câmera
+
+
+## Sprint 12 - Correção de Bug - Botão Enviar
+- [x] Investigar por que botão "Enviar Solicitação" não estava funcionando
+- [x] Identificar que botão estava FORA do form
+- [x] Mover botão para dentro do form (mantendo sticky bottom)
+- [x] Validar que mutation está sendo chamada corretamente
+- [x] Testes automatizados (25 testes passando)
+- [ ] Smoke test: enviar sem foto
+- [ ] Smoke test: enviar com foto da câmera
