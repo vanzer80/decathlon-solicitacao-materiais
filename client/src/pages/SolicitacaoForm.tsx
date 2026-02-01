@@ -723,7 +723,7 @@ export default function SolicitacaoForm() {
                             fileInputRefs.current[material.id]["foto1-camera"] = el;
                           }}
                           type="file"
-                          accept="image/*"
+                          accept="image/*;capture=environment"
                           capture="environment"
                           style={{ display: "none" }}
                           onChange={(e) => handleFileSelect(material.id, "foto1", e.target.files?.[0])}
@@ -789,7 +789,7 @@ export default function SolicitacaoForm() {
                             fileInputRefs.current[material.id]["foto2-camera"] = el;
                           }}
                           type="file"
-                          accept="image/*"
+                          accept="image/*;capture=environment"
                           capture="environment"
                           style={{ display: "none" }}
                           onChange={(e) => handleFileSelect(material.id, "foto2", e.target.files?.[0])}

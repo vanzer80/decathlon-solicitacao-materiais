@@ -251,9 +251,10 @@
 
 ### Bug: Câmera abre galeria em vez de capturar foto
 - [x] Analisar problema de capture attribute
-- [x] Implementar solução robusta com fallback
+- [x] Identificar causa raiz: iOS/Safari ignora capture com accept simples
+- [x] Implementar solução: accept="image/*;capture=environment"
 - [x] Adicionar detecção de suporte a câmera
 - [x] Criar testes para câmera (20 testes passando)
-- [ ] Validar em iOS e Android (OBRIGATÓRIO)
+- [ ] Validar em iOS real (OBRIGATÓRIO antes de produção)
 - [x] Documentar correção em BUG_FIX_CAMERA.md
-- [ ] Checkpoint: Bug de câmera corrigido
+- [ ] Checkpoint: Bug de câmera corrigido (DEFINITIVO)

@@ -115,49 +115,36 @@ Criados 20 testes para validar:
 
 ## 🔧 Implementação Técnica
 
-### Problema Original
+### Problema Original (iOS/Safari)
+
+Causa Raiz Identificada: iOS/Safari ignora capture quando usado com accept simples
 
 ```typescript
-// ❌ ERRADO: Mesmo input para câmera e galeria
-const input = fileInputRefs.current[materialId][key];
-input.setAttribute('capture', inputType === 'camera' ? 'environment' : '');
-input.click();
+// ERRADO: iOS/Safari ignora capture com accept simples
+<input type="file" accept="image/*" capture="environment" />
+// Resultado: Abre galeria em vez de câmera
 ```
 
-**Problemas**:
-- Atributo `capture` é removido quando `inputType === 'gallery'`
-- Navegador não respeita mudanças de atributo após criação
-- Listeners conflitam
+### Solução (Implementada)
 
-### Solução
+Usar accept="image/*;capture=environment" em vez de dois atributos separados
 
 ```typescript
-// ✅ CORRETO: Inputs separados e isolados
-const cameraInputRef = useRef<HTMLInputElement | null>(null);
-const fileInputRef = useRef<HTMLInputElement | null>(null);
-
-const openCamera = useCallback(() => {
-  if (!cameraInputRef.current) {
-    cameraInputRef.current = document.createElement('input');
-    cameraInputRef.current.type = 'file';
-    cameraInputRef.current.accept = 'image/*';
-    cameraInputRef.current.setAttribute('capture', 'environment');
-  }
-  cameraInputRef.current.value = '';
-  cameraInputRef.current.click();
-}, []);
-
-const openGallery = useCallback(() => {
-  if (!fileInputRef.current) {
-    fileInputRef.current = document.createElement('input');
-    fileInputRef.current.type = 'file';
-    fileInputRef.current.accept = 'image/*';
-    // NÃO usar capture para galeria
-  }
-  fileInputRef.current.value = '';
-  fileInputRef.current.click();
-}, []);
+// CORRETO: iOS/Safari respeita capture no accept
+<input 
+  type="file" 
+  accept="image/*;capture=environment"
+  capture="environment"
+/>
+// Resultado: Abre câmera corretamente
 ```
+
+Mudanças no SolicitacaoForm.tsx:
+- Alterado de: accept="image/*"
+- Alterado para: accept="image/*;capture=environment"
+- Mantido: capture="environment"
+
+Esta é uma quirk do iOS/Safari que requer o atributo capture dentro do accept para funcionar corretamente.
 
 ---
 
