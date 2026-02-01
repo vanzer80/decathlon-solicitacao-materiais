@@ -194,16 +194,16 @@
 - [ ] Checkpoint: Lazy Loading completo
 
 ### Melhoria 2: Rate Limiting
-- [ ] Instalar express-rate-limit
-- [ ] Criar middleware rateLimit.ts
-- [ ] Implementar limiter global (100 req/15min)
-- [ ] Implementar limiter para solicitações (10 req/min)
-- [ ] Implementar limiter para upload (5 req/5min)
-- [ ] Criar serviço de alertas para violações
-- [ ] Criar testes para rate limiting (vitest)
-- [ ] Testar com múltiplas requisições simultâneas
+- [x] Instalar express-rate-limit
+- [x] Criar middleware rateLimit.ts
+- [x] Implementar limiter global (100 req/15min)
+- [x] Implementar limiter para solicitações (10 req/min)
+- [x] Implementar limiter para upload (5 req/5min)
+- [ ] Criar serviço de alertas para violações (P2)
+- [x] Criar testes para rate limiting (vitest)
+- [ ] Testar com múltiplas requisições simultâneas (OBRIGATÓRIO)
 - [ ] Validar que alertas funcionam
-- [ ] Documentar em README.md
+- [x] Documentar em FASE1_MELHORIA2_RATE_LIMITING.md
 - [ ] Checkpoint: Rate Limiting completo
 
 ### Melhoria 3: Feedback Visual Aprimorado
