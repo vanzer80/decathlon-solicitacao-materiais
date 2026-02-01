@@ -245,3 +245,15 @@
 - [ ] Validar servidor rodando sem erros
 - [ ] Criar relatório de performance (antes/depois)
 - [ ] Checkpoint Final: Fase 1 Completa
+
+
+## BUGS CRÍTICOS
+
+### Bug: Câmera abre galeria em vez de capturar foto
+- [x] Analisar problema de capture attribute
+- [x] Implementar solução robusta com fallback
+- [x] Adicionar detecção de suporte a câmera
+- [x] Criar testes para câmera (20 testes passando)
+- [ ] Validar em iOS e Android (OBRIGATÓRIO)
+- [x] Documentar correção em BUG_FIX_CAMERA.md
+- [ ] Checkpoint: Bug de câmera corrigido
