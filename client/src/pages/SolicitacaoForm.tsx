@@ -672,6 +672,7 @@ export default function SolicitacaoForm() {
                             <img
                               src={material.foto1Preview}
                               alt="Preview foto 1"
+                              loading="lazy"
                               className="h-24 w-24 object-cover rounded-lg border-2 border-blue-300 shadow-sm"
                             />
                             <button
@@ -737,6 +738,7 @@ export default function SolicitacaoForm() {
                             <img
                               src={material.foto2Preview}
                               alt="Preview foto 2"
+                              loading="lazy"
                               className="h-24 w-24 object-cover rounded-lg border-2 border-blue-300 shadow-sm"
                             />
                             <button

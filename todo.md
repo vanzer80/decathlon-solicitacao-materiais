@@ -178,3 +178,70 @@
 - [x] Validar que upload de fotos funciona (4 testes passando)
 - [x] Servidor rodando sem erros
 - [ ] Teste manual em dispositivo mobile real (OBRIGATÓRIO)
+
+
+## FASE 1 - Quick Wins (Melhorias de Design e Performance)
+
+### Melhoria 1: Lazy Loading de Imagens
+- [x] Criar hook useIntersectionObserver.ts
+- [x] Adicionar loading="lazy" em imagens de preview
+- [ ] Implementar picture element com WebP fallback (P3)
+- [x] Criar testes para lazy loading (vitest)
+- [x] Testar em navegador desktop (DevTools mobile)
+- [ ] Testar em dispositivo mobile real (OBRIGATÓRIO)
+- [ ] Validar performance com Lighthouse
+- [x] Documentar implementação em FASE1_MELHORIA1_LAZY_LOADING.md
+- [ ] Checkpoint: Lazy Loading completo
+
+### Melhoria 2: Rate Limiting
+- [ ] Instalar express-rate-limit
+- [ ] Criar middleware rateLimit.ts
+- [ ] Implementar limiter global (100 req/15min)
+- [ ] Implementar limiter para solicitações (10 req/min)
+- [ ] Implementar limiter para upload (5 req/5min)
+- [ ] Criar serviço de alertas para violações
+- [ ] Criar testes para rate limiting (vitest)
+- [ ] Testar com múltiplas requisições simultâneas
+- [ ] Validar que alertas funcionam
+- [ ] Documentar em README.md
+- [ ] Checkpoint: Rate Limiting completo
+
+### Melhoria 3: Feedback Visual Aprimorado
+- [ ] Criar componente AppToast.tsx (success/error/info/warning)
+- [ ] Criar componente UploadProgress.tsx
+- [ ] Adicionar contador de fotos anexadas (X/2)
+- [ ] Criar SuccessAnimation.tsx (confetti/checkmark)
+- [ ] Adicionar indicadores de campo obrigatório
+- [ ] Atualizar SolicitacaoForm.tsx com novos componentes
+- [ ] Criar testes para feedback visual (vitest)
+- [ ] Testar em navegador desktop
+- [ ] Testar em dispositivo mobile real
+- [ ] Validar acessibilidade (ARIA labels)
+- [ ] Documentar em CHANGELOG.md
+- [ ] Checkpoint: Feedback Visual completo
+
+### Melhoria 4: Dark Mode
+- [ ] Criar hook useTheme.ts
+- [ ] Criar componente ThemeToggle.tsx
+- [ ] Adicionar cores dark mode ao index.css
+- [ ] Integrar toggle no header
+- [ ] Implementar detecção de preferência do sistema
+- [ ] Implementar persistência em localStorage
+- [ ] Criar testes para dark mode (vitest)
+- [ ] Testar em navegador desktop (light/dark)
+- [ ] Testar em dispositivo mobile real
+- [ ] Validar contraste de cores (WCAG AA)
+- [ ] Documentar em CHANGELOG.md
+- [ ] Checkpoint: Dark Mode completo
+
+### Documentação Final Fase 1
+- [ ] Atualizar README.md com novas features
+- [ ] Criar CHANGELOG.md com todas as mudanças
+- [ ] Criar FASE1_IMPLEMENTACAO.md com detalhes técnicos
+- [ ] Criar FASE1_TESTES.md com guia de testes
+- [ ] Atualizar ROADMAP.md com progresso
+- [ ] Validar que todos os testes passam (vitest)
+- [ ] Validar TypeScript sem erros
+- [ ] Validar servidor rodando sem erros
+- [ ] Criar relatório de performance (antes/depois)
+- [ ] Checkpoint Final: Fase 1 Completa
