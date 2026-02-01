@@ -17,6 +17,15 @@ import { LojaOption } from "@shared/types";
 import { Loader2, Trash2, Plus, Camera, Image as ImageIcon, X, CheckCircle2 } from "lucide-react";
 import { useLocation } from "wouter";
 
+// Detecta se o dispositivo suporta câmera
+const isCameraSupported = () => {
+  const userAgent = navigator.userAgent.toLowerCase();
+  const isIOS = /iphone|ipad|ipod/.test(userAgent);
+  const isAndroid = /android/.test(userAgent);
+  const isMobile = isIOS || isAndroid || /mobile/.test(userAgent);
+  return isMobile;
+};
+
 interface MaterialItem {
   id: string;
   material_descricao: string;
@@ -80,14 +89,22 @@ export default function SolicitacaoForm() {
 
     const key = `${fotoSlot}-${inputType}`;
     const input = fileInputRefs.current[materialId][key] as HTMLInputElement | null;
+    
     if (input) {
+      // Reset input value para permitir selecionar o mesmo arquivo novamente
       input.value = "";
-      if (inputType === "camera") {
-        input.setAttribute("capture", "environment");
-      } else {
-        input.removeAttribute("capture");
-      }
+      
+      // Log para debug
+      console.log(`[Camera] Acionando ${inputType} para ${fotoSlot}`, {
+        hasCapture: input.hasAttribute("capture"),
+        captureValue: input.getAttribute("capture"),
+        accept: input.getAttribute("accept"),
+      });
+      
+      // Trigger file input
       input.click();
+    } else {
+      console.warn(`[Camera] Input não encontrado: ${key}`);
     }
   };
 

@@ -164,3 +164,17 @@
 - [x] Criar docs/ROADMAP.md
 - [x] Verificar todos os arquivos
 - [x] Confirmar caminhos
+
+
+## Sprint 14 - Correção Crítica de Câmera
+- [x] Investigar por que câmera não estava funcionando
+- [x] Verificar atributo capture nos inputs (estava correto)
+- [x] Verificar função triggerFileInput (remover setAttribute)
+- [x] Corrigir implementação de câmera (remover lógica de setAttribute)
+- [x] Adicionar logs de debug para troubleshooting
+- [x] Criar testes de câmera (7 testes passando)
+- [x] Criar guia de teste manual (TESTE_CAMERA_MANUAL.md)
+- [x] Validar que galeria ainda funciona (testes passando)
+- [x] Validar que upload de fotos funciona (4 testes passando)
+- [x] Servidor rodando sem erros
+- [ ] Teste manual em dispositivo mobile real (OBRIGATÓRIO)
