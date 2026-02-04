@@ -221,16 +221,16 @@
 - [ ] Checkpoint: Feedback Visual completo
 
 ### Melhoria 4: Dark Mode
-- [ ] Criar hook useTheme.ts
-- [ ] Criar componente ThemeToggle.tsx
-- [ ] Adicionar cores dark mode ao index.css
-- [ ] Integrar toggle no header
-- [ ] Implementar detecção de preferência do sistema
-- [ ] Implementar persistência em localStorage
-- [ ] Criar testes para dark mode (vitest)
-- [ ] Testar em navegador desktop (light/dark)
-- [ ] Testar em dispositivo mobile real
-- [ ] Validar contraste de cores (WCAG AA)
+- [x] Criar hook useTheme.ts
+- [x] Criar componente ThemeToggle.tsx
+- [x] Adicionar cores dark mode ao index.css (já existiam)
+- [x] Integrar toggle no header
+- [x] Implementar detecção de preferência do sistema
+- [x] Implementar persistência em localStorage
+- [x] Criar testes para dark mode (vitest)
+- [ ] Testar em navegador desktop (light/dark) (OBRIGATÓRIO)
+- [ ] Testar em dispositivo mobile real (OBRIGATÓRIO)
+- [x] Validar contraste de cores (WCAG AA)
 - [ ] Documentar em CHANGELOG.md
 - [ ] Checkpoint: Dark Mode completo
 

@@ -19,6 +19,7 @@ import { useLocation } from "wouter";
 import { AppToast, ToastContainer } from "@/components/AppToast";
 import { UploadProgress, PhotoCounter } from "@/components/UploadProgress";
 import { SuccessAnimation } from "@/components/SuccessAnimation";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 // Detecta se o dispositivo suporta câmera
 const isCameraSupported = () => {
@@ -315,20 +316,23 @@ export default function SolicitacaoForm() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-50 pb-32">
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 pb-32 transition-colors">
       {/* HEADER */}
-      <div className="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
+      <div className="bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-40 shadow-sm">
         <div className="max-w-2xl mx-auto px-4 py-6">
-          <div className="text-center">
-            <h1 className="text-3xl font-bold text-slate-900 mb-1">Solicitação de Materiais</h1>
-            <p className="text-sm text-slate-600">MOPAR – Técnicos de Campo</p>
-            <p className="text-xs text-slate-500 mt-2">Sem login • Rápido • Seguro</p>
+          <div className="flex items-center justify-between">
+            <div className="text-center flex-1">
+              <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-1">Solicitação de Materiais</h1>
+              <p className="text-sm text-slate-600 dark:text-slate-400">MOPAR – Técnicos de Campo</p>
+              <p className="text-xs text-slate-500 dark:text-slate-500 mt-2">Sem login • Rápido • Seguro</p>
+            </div>
+            <ThemeToggle />
           </div>
         </div>
       </div>
 
       {/* CONTAINER PRINCIPAL */}
-      <form onSubmit={handleSubmit} className="max-w-2xl mx-auto px-4 py-8">
+      <form onSubmit={handleSubmit} className="max-w-2xl mx-auto px-4 py-8 dark:text-white">
         {/* Honeypot */}
         <input
           type="text"
