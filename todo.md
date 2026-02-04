@@ -207,16 +207,16 @@
 - [ ] Checkpoint: Rate Limiting completo
 
 ### Melhoria 3: Feedback Visual Aprimorado
-- [ ] Criar componente AppToast.tsx (success/error/info/warning)
-- [ ] Criar componente UploadProgress.tsx
-- [ ] Adicionar contador de fotos anexadas (X/2)
-- [ ] Criar SuccessAnimation.tsx (confetti/checkmark)
-- [ ] Adicionar indicadores de campo obrigatório
-- [ ] Atualizar SolicitacaoForm.tsx com novos componentes
-- [ ] Criar testes para feedback visual (vitest)
-- [ ] Testar em navegador desktop
-- [ ] Testar em dispositivo mobile real
-- [ ] Validar acessibilidade (ARIA labels)
+- [x] Criar componente AppToast.tsx (success/error/info/warning)
+- [x] Criar componente UploadProgress.tsx
+- [x] Adicionar contador de fotos anexadas (X/2)
+- [x] Criar SuccessAnimation.tsx (confetti/checkmark)
+- [x] Adicionar indicadores de campo obrigatório
+- [x] Atualizar SolicitacaoForm.tsx com novos componentes
+- [x] Criar testes para feedback visual (vitest)
+- [ ] Testar em navegador desktop (OBRIGATÓRIO)
+- [ ] Testar em dispositivo mobile real (OBRIGATÓRIO)
+- [x] Validar acessibilidade (ARIA labels)
 - [ ] Documentar em CHANGELOG.md
 - [ ] Checkpoint: Feedback Visual completo
 

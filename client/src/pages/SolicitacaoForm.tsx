@@ -16,6 +16,9 @@ import { trpc } from "@/lib/trpc";
 import { LojaOption } from "@shared/types";
 import { Loader2, Trash2, Plus, Camera, Image as ImageIcon, X, CheckCircle2 } from "lucide-react";
 import { useLocation } from "wouter";
+import { AppToast, ToastContainer } from "@/components/AppToast";
+import { UploadProgress, PhotoCounter } from "@/components/UploadProgress";
+import { SuccessAnimation } from "@/components/SuccessAnimation";
 
 // Detecta se o dispositivo suporta câmera
 const isCameraSupported = () => {
@@ -59,6 +62,12 @@ export default function SolicitacaoForm() {
   const [diagnosticResult, setDiagnosticResult] = useState<any>(null);
   const [isDiagnosing, setIsDiagnosing] = useState(false);
   const [, setLocation] = useLocation();
+  
+  // Feedback Visual
+  const [toasts, setToasts] = useState<any[]>([]);
+  const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
+  const [successRequestId, setSuccessRequestId] = useState<string>("");
+  const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
 
   const [formData, setFormData] = useState({
     solicitante_nome: "",
@@ -73,6 +82,16 @@ export default function SolicitacaoForm() {
   });
 
   const fileInputRefs = useRef<Record<string, Record<string, HTMLInputElement | null>>>({});
+
+  const addToast = (type: string, title: string, message?: string) => {
+    const id = `toast-${Date.now()}`;
+    const newToast = { id, type, title, message, duration: 5000 };
+    setToasts((prev) => [...prev, newToast]);
+  };
+
+  const removeToast = (id: string) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  };
 
   const filteredLojas = lojas.filter((loja) =>
     loja.Loja_Label.toLowerCase().includes(searchLoja.toLowerCase())
@@ -206,7 +225,13 @@ export default function SolicitacaoForm() {
       });
 
       if (result.requestId) {
-        setLocation(`/sucesso?id=${result.requestId}`);
+        setSuccessRequestId(result.requestId);
+        setShowSuccessAnimation(true);
+        addToast("success", "Sucesso!", `Solicitacao #${result.requestId} enviada com sucesso`);
+        
+        setTimeout(() => {
+          setLocation(`/sucesso?id=${result.requestId}`);
+        }, 2500);
       }
     } catch (error: any) {
       console.error("[API Mutation Error]", error);
@@ -218,7 +243,7 @@ export default function SolicitacaoForm() {
           });
         }
       } else {
-        toast.error(error.message || "Erro ao enviar solicitação");
+        addToast("error", "Erro ao enviar", error.message || "Tente novamente");
       }
       setShowDiagnosticModal(true);
     } finally {
@@ -839,7 +864,11 @@ export default function SolicitacaoForm() {
         <div className="h-4" />
       </form>
 
+      {/* Toast Container */}
+      <ToastContainer toasts={toasts} onRemove={removeToast} />
 
+      {/* Success Animation */}
+      <SuccessAnimation show={showSuccessAnimation} requestId={successRequestId} />
 
       {/* MODAL DIAGNÓSTICO */}
       {showDiagnosticModal && (
