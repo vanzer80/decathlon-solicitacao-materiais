@@ -258,3 +258,38 @@
 - [ ] Validar em iOS real (OBRIGATÓRIO antes de produção)
 - [x] Documentar correção em BUG_FIX_CAMERA.md
 - [ ] Checkpoint: Bug de câmera corrigido (DEFINITIVO)
+
+
+## FASE 2 - Otimizações Avançadas (Opção 1: Máximo Impacto)
+
+### Melhoria 1: Code Splitting & Dynamic Imports
+- [ ] Extrair modal de diagnóstico em componente separado (DiagnosticModal.tsx)
+- [ ] Extrair seções do formulário em sub-componentes (MainDataSection, TeamSection, MaterialsSection)
+- [ ] Implementar React.lazy() + Suspense para componentes grandes
+- [ ] Lazy load página Histórico apenas quando necessário
+- [ ] Criar testes para code splitting (vitest)
+- [ ] Validar bundle size antes/depois com webpack-bundle-analyzer
+- [ ] Documentar em FASE2_MELHORIA1_CODE_SPLITTING.md
+- [ ] Checkpoint: Code Splitting completo
+
+### Melhoria 2: Otimização de Queries tRPC
+- [ ] Implementar staleTime em queries (dados não mudam frequentemente)
+- [ ] Usar gcTime para cache mais agressivo
+- [ ] Deduplicar requisições simultâneas com requestPolicy
+- [ ] Implementar retry automático com backoff exponencial
+- [ ] Adicionar prefetching para dados críticos
+- [ ] Criar testes para caching (vitest)
+- [ ] Validar redução de requisições de rede
+- [ ] Documentar em FASE2_MELHORIA2_QUERIES_TRPC.md
+- [ ] Checkpoint: Otimização de Queries completa
+
+### Melhoria 3: Compressão de Imagens
+- [ ] Instalar browser-image-compression npm
+- [ ] Implementar compressão automática ao capturar câmera
+- [ ] Implementar compressão automática ao selecionar galeria
+- [ ] Redimensionamento automático (max 1920x1080)
+- [ ] Indicador visual de progresso de compressão
+- [ ] Validar tamanho final (< 500KB por imagem)
+- [ ] Criar testes para compressão (vitest)
+- [ ] Documentar em FASE2_MELHORIA3_COMPRESSAO_IMAGENS.md
+- [ ] Checkpoint: Compressão de Imagens completa

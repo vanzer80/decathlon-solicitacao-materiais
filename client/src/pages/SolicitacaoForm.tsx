@@ -20,6 +20,23 @@ import { AppToast, ToastContainer } from "@/components/AppToast";
 import { UploadProgress, PhotoCounter } from "@/components/UploadProgress";
 import { SuccessAnimation } from "@/components/SuccessAnimation";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { lazy, Suspense } from "react";
+import { DiagnosticModal } from "@/components/DiagnosticModal";
+
+const MainDataSection = lazy(() => import("@/components/MainDataSection").then(m => ({ default: m.MainDataSection })));
+const TeamServiceSection = lazy(() => import("@/components/TeamServiceSection").then(m => ({ default: m.TeamServiceSection })));
+const MaterialsSection = lazy(() => import("@/components/MaterialsSection").then(m => ({ default: m.MaterialsSection })));
+
+// Loading fallback para seções
+const SectionSkeleton = () => (
+  <div className="mb-6 border border-slate-200 rounded-lg p-6 bg-slate-50 animate-pulse">
+    <div className="h-6 bg-slate-200 rounded w-1/3 mb-4"></div>
+    <div className="space-y-3">
+      <div className="h-4 bg-slate-200 rounded"></div>
+      <div className="h-4 bg-slate-200 rounded w-5/6"></div>
+    </div>
+  </div>
+);
 
 // Detecta se o dispositivo suporta câmera
 const isCameraSupported = () => {
@@ -345,502 +362,61 @@ export default function SolicitacaoForm() {
         />
 
         {/* SEÇÃO 1: DADOS PRINCIPAIS */}
-        <Card className="mb-6 border border-slate-200 shadow-sm hover:shadow-lg hover:border-blue-200 transition-all duration-200">
-          <div className="p-6">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-600 text-white font-bold text-sm shadow-md">
-                1
-              </div>
-              <h2 className="text-lg font-semibold text-slate-900">Dados Principais</h2>
-            </div>
-
-            <div className="space-y-5">
-              {/* Loja */}
-              <div>
-                <Label className="text-sm font-medium text-slate-700 mb-2 block">
-                  Loja / Cliente <span className="text-red-500">*</span>
-                </Label>
-                <div className="relative">
-                  <Input
-                    type="text"
-                    placeholder="Pesquise a loja..."
-                    value={searchLoja}
-                    onChange={(e) => setSearchLoja(e.target.value)}
-                    onFocus={() => setIsLojaDropdownOpen(true)}
-                    onClick={() => setIsLojaDropdownOpen(true)}
-                    className="w-full h-12 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 focus:border-blue-500 transition-all duration-200"
-                  />
-                  {isLojaDropdownOpen && filteredLojas.length > 0 && (
-                    <div className="absolute top-full left-0 right-0 bg-white border border-slate-300 rounded-lg shadow-lg z-10 max-h-48 overflow-y-auto mt-2">
-                      {filteredLojas.map((loja) => (
-                        <button
-                          key={loja.Loja_ID}
-                          type="button"
-                          onClick={() => {
-                            setSelectedLoja(loja);
-                            setSearchLoja("");
-                            setIsLojaDropdownOpen(false);
-                          }}
-                          className="w-full text-left px-4 py-3 hover:bg-blue-50 text-sm border-b border-slate-100 last:border-b-0 transition-colors"
-                        >
-                          {loja.Loja_Label}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                  {isLojaDropdownOpen && filteredLojas.length === 0 && (
-                    <div className="absolute top-full left-0 right-0 bg-white border border-slate-300 rounded-lg shadow-lg z-10 p-4 mt-2 text-sm text-slate-600">
-                      Nenhuma loja encontrada
-                    </div>
-                  )}
-                </div>
-                {selectedLoja && (
-                  <div className="flex items-center gap-2 mt-2 text-sm text-green-600">
-                    <CheckCircle2 size={16} />
-                    {selectedLoja.Loja_Label}
-                  </div>
-                )}
-              </div>
-
-              {/* Nome do Solicitante */}
-              <div>
-                <Label className="text-sm font-medium text-slate-700 mb-2 block">
-                  Nome do Solicitante <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  type="text"
-                  placeholder="Seu nome completo"
-                  value={formData.solicitante_nome}
-                  onChange={(e) => setFormData({ ...formData, solicitante_nome: e.target.value })}
-                  className="h-11 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 focus:border-blue-500 transition-all duration-200"
-                />
-              </div>
-
-              {/* Telefone e Número do Chamado */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-sm font-medium text-slate-700 mb-2 block">
-                    Telefone / WhatsApp
-                  </Label>
-                <Input
-                  type="tel"
-                  placeholder="(11) 99999-9999"
-                  value={formData.solicitante_telefone}
-                  onChange={(e) => setFormData({ ...formData, solicitante_telefone: e.target.value })}
-                  className="h-11 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 focus:border-blue-500 transition-all duration-200"
-                />
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-slate-700 mb-2 block">
-                    Número do Chamado
-                  </Label>
-                <Input
-                  type="text"
-                  placeholder="Ex: CHM-2026-001"
-                  value={formData.numero_chamado}
-                  onChange={(e) => setFormData({ ...formData, numero_chamado: e.target.value })}
-                  className="h-11 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 focus:border-blue-500 transition-all duration-200"
-                />
-                </div>
-              </div>
-            </div>
-          </div>
-        </Card>
+        <Suspense fallback={<SectionSkeleton />}>
+          <MainDataSection
+          selectedLoja={selectedLoja}
+          searchLoja={searchLoja}
+          filteredLojas={filteredLojas}
+          isLojaDropdownOpen={isLojaDropdownOpen}
+          formData={{
+            solicitante_nome: formData.solicitante_nome,
+            solicitante_telefone: formData.solicitante_telefone,
+            numero_chamado: formData.numero_chamado,
+          }}
+          onSearchLoja={setSearchLoja}
+          onOpenLojaDropdown={() => setIsLojaDropdownOpen(true)}
+          onSelectLoja={(loja) => {
+            setSelectedLoja(loja);
+            setSearchLoja("");
+            setIsLojaDropdownOpen(false);
+          }}
+          onFormChange={(field, value) => setFormData({ ...formData, [field]: value })}
+          />
+        </Suspense>
 
         {/* SEÇÃO 2: EQUIPE E SERVIÇO */}
-        <Card className="mb-6 border border-slate-200 shadow-sm hover:shadow-lg hover:border-blue-200 transition-all duration-200">
-          <div className="p-6">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-600 text-white font-bold text-sm shadow-md">
-                2
-              </div>
-              <h2 className="text-lg font-semibold text-slate-900">Equipe e Serviço</h2>
-            </div>
-
-            <div className="space-y-5">
-              {/* Tipo de Equipe */}
-              <div>
-                <Label className="text-sm font-medium text-slate-700 mb-2 block">
-                  Tipo de Equipe <span className="text-red-500">*</span>
-                </Label>
-                <Select value={formData.tipo_equipe} onValueChange={(value) => setFormData({ ...formData, tipo_equipe: value })}>
-                  <SelectTrigger className="w-full h-12 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 focus:border-blue-500 transition-all duration-200">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Própria">Própria</SelectItem>
-                    <SelectItem value="Terceirizada">Terceirizada</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Empresa Terceira */}
-              {formData.tipo_equipe === "Terceirizada" && (
-                <div>
-                  <Label className="text-sm font-medium text-slate-700 mb-2 block">
-                    Empresa / Nome da Equipe <span className="text-red-500">*</span>
-                  </Label>
-                  <Input
-                    type="text"
-                    placeholder="Nome da empresa"
-                    value={formData.empresa_terceira}
-                    onChange={(e) => setFormData({ ...formData, empresa_terceira: e.target.value })}
-                    className="h-11 text-sm border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-              )}
-
-              {/* Tipo de Serviço */}
-              <div>
-                <Label className="text-sm font-medium text-slate-700 mb-2 block">
-                  Tipo de Serviço <span className="text-red-500">*</span>
-                </Label>
-                <Select value={formData.tipo_servico} onValueChange={(value) => setFormData({ ...formData, tipo_servico: value })}>
-                  <SelectTrigger className="w-full h-12 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 focus:border-blue-500 transition-all duration-200">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Preventiva">Preventiva</SelectItem>
-                    <SelectItem value="Corretiva">Corretiva</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Sistema Afetado */}
-              <div>
-                <Label className="text-sm font-medium text-slate-700 mb-2 block">
-                  Sistema Afetado <span className="text-red-500">*</span>
-                </Label>
-                <Select value={formData.sistema_afetado} onValueChange={(value) => setFormData({ ...formData, sistema_afetado: value })}>
-                  <SelectTrigger className="w-full h-12 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 focus:border-blue-500 transition-all duration-200">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="HVAC">HVAC</SelectItem>
-                    <SelectItem value="Elétrica">Elétrica</SelectItem>
-                    <SelectItem value="Hidráulica">Hidráulica</SelectItem>
-                    <SelectItem value="Civil">Civil</SelectItem>
-                    <SelectItem value="PPCI">PPCI</SelectItem>
-                    <SelectItem value="Outros">Outros</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Descrição Geral */}
-              <div>
-                <Label className="text-sm font-medium text-slate-700 mb-2 block">
-                  Descrição Geral do Serviço <span className="text-red-500">*</span>
-                </Label>
-                <Textarea
-                  placeholder="Descreva o serviço realizado..."
-                  value={formData.descricao_geral_servico}
-                  onChange={(e) => setFormData({ ...formData, descricao_geral_servico: e.target.value })}
-                  className="min-h-24 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 focus:border-blue-500 transition-all duration-200 resize-none"
-                />
-              </div>
-            </div>
-          </div>
-        </Card>
+        <Suspense fallback={<SectionSkeleton />}>
+          <TeamServiceSection
+          formData={{
+            tipo_equipe: formData.tipo_equipe,
+            empresa_terceira: formData.empresa_terceira,
+            tipo_servico: formData.tipo_servico,
+            sistema_afetado: formData.sistema_afetado,
+            descricao_geral_servico: formData.descricao_geral_servico,
+          }}
+          onFormChange={(field, value) => setFormData({ ...formData, [field]: value })}
+          />
+        </Suspense>
 
         {/* SEÇÃO 3: MATERIAIS */}
-        <Card className="mb-6 border border-slate-200 shadow-sm hover:shadow-lg hover:border-blue-200 transition-all duration-200">
-          <div className="p-6">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-600 text-white font-bold text-sm shadow-md">
-                3
-              </div>
-              <h2 className="text-lg font-semibold text-slate-900">Materiais</h2>
-              <span className="ml-auto text-xs font-medium text-slate-500 bg-slate-100 px-2 py-1 rounded">
-                {materials.length} {materials.length === 1 ? "item" : "itens"}
-              </span>
-            </div>
-
-            <div className="space-y-6">
-              {materials.map((material, index) => (
-                <div key={material.id} className="p-4 border border-slate-200 rounded-lg bg-slate-50 hover:bg-white transition-colors">
-                  {/* Cabeçalho do Material */}
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-medium text-slate-900">Material {index + 1}</h3>
-                    {materials.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => removeMaterial(material.id)}
-                        className="text-red-500 hover:text-red-700 hover:bg-red-50 p-1 rounded transition-colors"
-                      >
-                        <Trash2 size={18} />
-                      </button>
-                    )}
-                  </div>
-
-                  <div className="space-y-4">
-                    {/* Descrição */}
-                    <div>
-                      <Label className="text-xs font-medium text-slate-700 mb-1 block">
-                        Descrição <span className="text-red-500">*</span>
-                      </Label>
-                      <Input
-                        type="text"
-                        placeholder="Ex: Filtro de ar"
-                        value={material.material_descricao}
-                        onChange={(e) =>
-                          setMaterials((prev) =>
-                            prev.map((m) =>
-                              m.id === material.id ? { ...m, material_descricao: e.target.value } : m
-                            )
-                          )
-                        }
-                        className="h-10 text-sm border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      />
-                    </div>
-
-                    {/* Especificação */}
-                    <div>
-                      <Label className="text-xs font-medium text-slate-700 mb-1 block">
-                        Especificação
-                      </Label>
-                      <Input
-                        type="text"
-                        placeholder="Ex: Modelo XYZ-123"
-                        value={material.material_especificacao}
-                        onChange={(e) =>
-                          setMaterials((prev) =>
-                            prev.map((m) =>
-                              m.id === material.id ? { ...m, material_especificacao: e.target.value } : m
-                            )
-                          )
-                        }
-                        className="h-10 text-sm border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      />
-                    </div>
-
-                    {/* Quantidade, Unidade, Urgência */}
-                    <div className="grid grid-cols-3 gap-3">
-                      <div>
-                        <Label className="text-xs font-medium text-slate-700 mb-1 block">
-                          Qtd <span className="text-red-500">*</span>
-                        </Label>
-                        <Input
-                          type="number"
-                          min="1"
-                          value={material.quantidade}
-                          onChange={(e) =>
-                            setMaterials((prev) =>
-                              prev.map((m) =>
-                                m.id === material.id ? { ...m, quantidade: parseInt(e.target.value) || 1 } : m
-                              )
-                            )
-                          }
-                          className="h-10 text-sm border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        />
-                      </div>
-                      <div>
-                        <Label className="text-xs font-medium text-slate-700 mb-1 block">
-                          Unidade <span className="text-red-500">*</span>
-                        </Label>
-                        <Select
-                          value={material.unidade}
-                          onValueChange={(value) =>
-                            setMaterials((prev) =>
-                              prev.map((m) =>
-                                m.id === material.id ? { ...m, unidade: value } : m
-                              )
-                            )
-                          }
-                        >
-                          <SelectTrigger className="h-10 text-sm border-slate-300 focus:ring-2 focus:ring-blue-500">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="un">un</SelectItem>
-                            <SelectItem value="cx">cx</SelectItem>
-                            <SelectItem value="par">par</SelectItem>
-                            <SelectItem value="m">m</SelectItem>
-                            <SelectItem value="kg">kg</SelectItem>
-                            <SelectItem value="L">L</SelectItem>
-                            <SelectItem value="rolo">rolo</SelectItem>
-                            <SelectItem value="kit">kit</SelectItem>
-                            <SelectItem value="outro">outro</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div>
-                        <Label className="text-xs font-medium text-slate-700 mb-1 block">
-                          Urgência <span className="text-red-500">*</span>
-                        </Label>
-                        <Select
-                          value={material.urgencia}
-                          onValueChange={(value) =>
-                            setMaterials((prev) =>
-                              prev.map((m) =>
-                                m.id === material.id ? { ...m, urgencia: value } : m
-                              )
-                            )
-                          }
-                        >
-                          <SelectTrigger className="h-10 text-sm border-slate-300 focus:ring-2 focus:ring-blue-500">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Alta">Alta</SelectItem>
-                            <SelectItem value="Média">Média</SelectItem>
-                            <SelectItem value="Baixa">Baixa</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-
-                    {/* Fotos */}
-                    <div className="border-t border-slate-200 pt-4">
-                      <p className="text-xs font-medium text-slate-700 mb-3">Fotos (Máx 5MB • Até 2 fotos)</p>
-
-                      {/* Foto 1 */}
-                      <div className="mb-3">
-                        <p className="text-xs text-slate-600 mb-2">Foto 1</p>
-                        {material.foto1Preview ? (
-                          <div className="relative inline-block">
-                            <img
-                              src={material.foto1Preview}
-                              alt="Preview foto 1"
-                              loading="lazy"
-                              className="h-24 w-24 object-cover rounded-lg border-2 border-blue-300 shadow-sm"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => handleRemovePhoto(material.id, "foto1")}
-                              className="absolute -top-2 -right-2 bg-red-500 text-white p-1 rounded-full hover:bg-red-600 shadow-md"
-                            >
-                              <X size={14} />
-                            </button>
-                          </div>
-                        ) : (
-                          <div className="flex gap-2">
-                            <button
-                              type="button"
-                              onClick={() => triggerFileInput(material.id, "foto1", "gallery")}
-                              className="flex-1 flex items-center justify-center gap-2 p-3 border-2 border-dashed border-slate-300 rounded-lg hover:border-blue-400 hover:bg-blue-50 text-sm font-medium text-slate-700 transition-colors"
-                            >
-                              <ImageIcon size={18} />
-                              Galeria
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => triggerFileInput(material.id, "foto1", "camera")}
-                              className="flex-1 flex items-center justify-center gap-2 p-3 border-2 border-dashed border-slate-300 rounded-lg hover:border-blue-400 hover:bg-blue-50 text-sm font-medium text-slate-700 transition-colors"
-                            >
-                              <Camera size={18} />
-                              Câmera
-                            </button>
-                          </div>
-                        )}
-                        <input
-                          ref={(el) => {
-                            if (!fileInputRefs.current[material.id]) {
-                              fileInputRefs.current[material.id] = {};
-                            }
-                            fileInputRefs.current[material.id]["foto1-gallery"] = el;
-                          }}
-                          type="file"
-                          accept="image/*"
-                          style={{ display: "none" }}
-                          onChange={(e) => handleFileSelect(material.id, "foto1", e.target.files?.[0])}
-                        />
-                        <input
-                          ref={(el) => {
-                            if (!fileInputRefs.current[material.id]) {
-                              fileInputRefs.current[material.id] = {};
-                            }
-                            fileInputRefs.current[material.id]["foto1-camera"] = el;
-                          }}
-                          type="file"
-                          accept="image/*;capture=environment"
-                          capture="environment"
-                          style={{ display: "none" }}
-                          onChange={(e) => handleFileSelect(material.id, "foto1", e.target.files?.[0])}
-                        />
-                      </div>
-
-                      {/* Foto 2 */}
-                      <div>
-                        <p className="text-xs text-slate-600 mb-2">Foto 2</p>
-                        {material.foto2Preview ? (
-                          <div className="relative inline-block">
-                            <img
-                              src={material.foto2Preview}
-                              alt="Preview foto 2"
-                              loading="lazy"
-                              className="h-24 w-24 object-cover rounded-lg border-2 border-blue-300 shadow-sm"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => handleRemovePhoto(material.id, "foto2")}
-                              className="absolute -top-2 -right-2 bg-red-500 text-white p-1 rounded-full hover:bg-red-600 shadow-md"
-                            >
-                              <X size={14} />
-                            </button>
-                          </div>
-                        ) : (
-                          <div className="flex gap-2">
-                            <button
-                              type="button"
-                              onClick={() => triggerFileInput(material.id, "foto2", "gallery")}
-                              className="flex-1 flex items-center justify-center gap-2 p-3 border-2 border-dashed border-slate-300 rounded-lg hover:border-blue-400 hover:bg-blue-50 text-sm font-medium text-slate-700 transition-colors"
-                            >
-                              <ImageIcon size={18} />
-                              Galeria
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => triggerFileInput(material.id, "foto2", "camera")}
-                              className="flex-1 flex items-center justify-center gap-2 p-3 border-2 border-dashed border-slate-300 rounded-lg hover:border-blue-400 hover:bg-blue-50 text-sm font-medium text-slate-700 transition-colors"
-                            >
-                              <Camera size={18} />
-                              Câmera
-                            </button>
-                          </div>
-                        )}
-                        <input
-                          ref={(el) => {
-                            if (!fileInputRefs.current[material.id]) {
-                              fileInputRefs.current[material.id] = {};
-                            }
-                            fileInputRefs.current[material.id]["foto2-gallery"] = el;
-                          }}
-                          type="file"
-                          accept="image/*"
-                          style={{ display: "none" }}
-                          onChange={(e) => handleFileSelect(material.id, "foto2", e.target.files?.[0])}
-                        />
-                        <input
-                          ref={(el) => {
-                            if (!fileInputRefs.current[material.id]) {
-                              fileInputRefs.current[material.id] = {};
-                            }
-                            fileInputRefs.current[material.id]["foto2-camera"] = el;
-                          }}
-                          type="file"
-                          accept="image/*;capture=environment"
-                          capture="environment"
-                          style={{ display: "none" }}
-                          onChange={(e) => handleFileSelect(material.id, "foto2", e.target.files?.[0])}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-
-              {/* Botão Adicionar Material */}
-              <button
-                type="button"
-                onClick={addMaterial}
-                className="w-full flex items-center justify-center gap-2 p-3 border-2 border-dashed border-blue-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 text-sm font-medium text-blue-600 transition-colors"
-              >
-                <Plus size={18} />
-                Adicionar Material
-              </button>
-            </div>
-          </div>
-        </Card>
+        <Suspense fallback={<SectionSkeleton />}>
+          <MaterialsSection
+          materials={materials}
+          onMaterialChange={(materialId, field, value) => {
+            setMaterials((prev) =>
+              prev.map((m) =>
+                m.id === materialId ? { ...m, [field]: value } : m
+              )
+            );
+          }}
+          onAddMaterial={addMaterial}
+          onRemoveMaterial={removeMaterial}
+          onFileSelect={(materialId, fotoSlot, file) => {
+            if (file) handleFileSelect(materialId, fotoSlot, file);
+          }}
+          onRemovePhoto={handleRemovePhoto}
+          />
+        </Suspense>
 
         {/* BOTÃO STICKY BOTTOM */}
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-lg">
@@ -875,55 +451,13 @@ export default function SolicitacaoForm() {
       <SuccessAnimation show={showSuccessAnimation} requestId={successRequestId} />
 
       {/* MODAL DIAGNÓSTICO */}
-      {showDiagnosticModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <Card className="w-full max-w-md p-6">
-            <h3 className="text-lg font-semibold text-slate-900 mb-4">Diagnosticar Webhook</h3>
-            {diagnosticResult ? (
-              <div className="space-y-3 mb-4 max-h-64 overflow-y-auto text-sm">
-                <div>
-                  <p className="font-medium text-slate-700">URL:</p>
-                  <p className="text-slate-600 break-all">{diagnosticResult.url}</p>
-                </div>
-                <div>
-                  <p className="font-medium text-slate-700">Status:</p>
-                  <p className={diagnosticResult.status === 200 ? "text-green-600" : "text-red-600"}>
-                    {diagnosticResult.status}
-                  </p>
-                </div>
-                <div>
-                  <p className="font-medium text-slate-700">Content-Type:</p>
-                  <p className="text-slate-600">{diagnosticResult.contentType}</p>
-                </div>
-                <div>
-                  <p className="font-medium text-slate-700">Snippet:</p>
-                  <p className="text-slate-600 bg-slate-100 p-2 rounded font-mono text-xs">
-                    {diagnosticResult.bodySnippet}
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <p className="text-slate-600 mb-4">Clique em "Diagnosticar" para testar a conexão com o webhook.</p>
-            )}
-            <div className="flex gap-2">
-              <Button
-                onClick={() => {}}
-                disabled={isDiagnosing}
-                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
-              >
-                {isDiagnosing ? "Diagnosticando..." : "Diagnosticar"}
-              </Button>
-              <Button
-                onClick={() => setShowDiagnosticModal(false)}
-                variant="outline"
-                className="flex-1"
-              >
-                Fechar
-              </Button>
-            </div>
-          </Card>
-        </div>
-      )}
+      <DiagnosticModal
+        isOpen={showDiagnosticModal}
+        isDiagnosing={isDiagnosing}
+        diagnosticResult={diagnosticResult}
+        onDiagnose={() => {}}
+        onClose={() => setShowDiagnosticModal(false)}
+      />
     </div>
   );
 }
