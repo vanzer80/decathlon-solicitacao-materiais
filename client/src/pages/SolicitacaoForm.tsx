@@ -303,11 +303,15 @@ export default function SolicitacaoForm() {
       setToasts((prev) => prev.filter((t) => t.id !== toastId));
 
       // Mostrar sucesso com economia
+      const successMessage = result.usedFallback
+        ? 'Foto salva (compressão não disponível)'
+        : `Redução: ${result.compressionRatio.toFixed(0)}% | Economizado: ${savings.formattedSaved}`;
+
       setToasts((prev) => [...prev, {
         id: `success-${toastId}`,
         type: 'success',
-        title: 'Imagem comprimida com sucesso!',
-        message: `Redução: ${result.compressionRatio.toFixed(0)}% | Economizado: ${savings.formattedSaved}`,
+        title: result.usedFallback ? 'Foto salva!' : 'Imagem comprimida com sucesso!',
+        message: successMessage,
       }]);
 
       // Converter blob para File
