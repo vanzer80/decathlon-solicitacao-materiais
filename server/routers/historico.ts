@@ -3,6 +3,7 @@ import { publicProcedure, router } from "../_core/trpc";
 import { getDb } from "../db";
 import { materialRequests, materialItems } from "../../drizzle/schema";
 import { desc, eq, gte, lte, like, and } from "drizzle-orm";
+import { getDataLoader } from "../services/dataLoaderService";
 
 const ListarSolicitacoesSchema = z.object({
   dataInicio: z.date().optional(),
@@ -74,22 +75,15 @@ export const historicoRouter = router({
         .where(whereClause);
       const total = totalResult[0]?.count || 0;
 
-      // Buscar solicitações
+      // Buscar solicitações (apenas campos necessários para lista)
       const resultado = await db
         .select({
-          id: materialRequests.id,
           requestId: materialRequests.requestId,
-          lojaId: materialRequests.lojaId,
           lojaLabel: materialRequests.lojaLabel,
           solicitanteNome: materialRequests.solicitanteNome,
-          solicitanteTelefone: materialRequests.solicitanteTelefone,
-          numeroChamado: materialRequests.numeroChamado,
-          tipoEquipe: materialRequests.tipoEquipe,
           tipoServico: materialRequests.tipoServico,
           sistemaAfetado: materialRequests.sistemaAfetado,
-          descricaoGeralServico: materialRequests.descricaoGeralServico,
           timestampEnvio: materialRequests.timestampEnvio,
-          createdAt: materialRequests.createdAt,
         })
         .from(materialRequests)
         .where(whereClause)
@@ -111,30 +105,20 @@ export const historicoRouter = router({
   detalhe: publicProcedure
     .input(DetalheSolicitacaoSchema)
     .query(async ({ input }) => {
-      const db = await getDb();
-      if (!db) {
-        throw new Error("Database not available");
-      }
+      const dataLoader = getDataLoader();
 
-      // Buscar solicitação
-      const solicitacao = await db
-        .select()
-        .from(materialRequests)
-        .where(eq(materialRequests.requestId, input.request_id))
-        .limit(1);
+      // Buscar solicitação e itens em paralelo com batching
+      const [solicitacao, itens] = await Promise.all([
+        dataLoader.loadMaterialRequest(input.request_id),
+        dataLoader.loadMaterialItems(input.request_id),
+      ]);
 
-      if (solicitacao.length === 0) {
+      if (!solicitacao) {
         throw new Error("Solicitação não encontrada");
       }
 
-      // Buscar itens
-      const itens = await db
-        .select()
-        .from(materialItems)
-        .where(eq(materialItems.requestId, input.request_id));
-
       return {
-        solicitacao: solicitacao[0],
+        solicitacao,
         itens,
       };
     }),

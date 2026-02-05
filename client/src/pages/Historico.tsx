@@ -235,11 +235,11 @@ export default function Historico() {
                   </thead>
                   <tbody>
                     {resultado?.dados.map((sol) => (
-                      <tr key={sol.id} className="border-b hover:bg-gray-50">
+                      <tr key={sol.requestId} className="border-b hover:bg-gray-50">
                         <td className="px-4 py-3 text-sm font-mono text-blue-600">{sol.requestId}</td>
                         <td className="px-4 py-3 text-sm text-gray-700">{sol.lojaLabel}</td>
                         <td className="px-4 py-3 text-sm text-gray-700">{sol.solicitanteNome}</td>
-                        <td className="px-4 py-3 text-sm text-gray-600">{formatarData(sol.createdAt)}</td>
+                        <td className="px-4 py-3 text-sm text-gray-600">{formatarData(sol.timestampEnvio)}</td>
                         <td className="px-4 py-3 text-sm">
                           <Button
                             size="sm"
