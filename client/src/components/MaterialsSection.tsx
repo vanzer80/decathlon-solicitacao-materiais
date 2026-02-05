@@ -9,7 +9,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Trash2, Plus, Camera, Image as ImageIcon, X } from "lucide-react";
-import { useRef } from "react";
+import { useRef, useCallback } from "react";
 
 interface MaterialItem {
   id: string;
@@ -43,10 +43,75 @@ export function MaterialsSection({
 }: MaterialsSectionProps) {
   const fileInputRefs = useRef<Record<string, Record<string, HTMLInputElement | null>>>({});
 
-  const triggerFileInput = (materialId: string, fotoSlot: "foto1" | "foto2", type: "gallery" | "camera") => {
+  /**
+   * CORREÇÃO BUG 1 + BUG 4: Trigger file input com reset de value
+   * Garante que onChange dispara mesmo para o mesmo arquivo
+   * Usa useCallback para estabilizar refs
+   */
+  const triggerFileInput = useCallback((
+    materialId: string,
+    fotoSlot: "foto1" | "foto2",
+    type: "gallery" | "camera"
+  ) => {
     const key = `${fotoSlot}-${type}`;
-    fileInputRefs.current[materialId]?.[key]?.click();
-  };
+    const input = fileInputRefs.current[materialId]?.[key];
+
+    if (input) {
+      // CRÍTICO: Reset value para permitir selecionar o mesmo arquivo novamente
+      input.value = '';
+      input.click();
+    }
+  }, []);
+
+  /**
+   * CORREÇÃO BUG 4: Usar useCallback para estabilizar refs
+   * Evita que refs sejam reinicializadas em cada render
+   */
+  const createRefCallback = useCallback((materialId: string, key: string) => {
+    return (el: HTMLInputElement | null) => {
+      if (!fileInputRefs.current[materialId]) {
+        fileInputRefs.current[materialId] = {};
+      }
+      fileInputRefs.current[materialId][key] = el;
+    };
+  }, []);
+
+  /**
+   * CORREÇÃO BUG 3 + BUG 6: Validar arquivo antes de processar
+   * Trata erros e valida tipo de arquivo
+   */
+  const handleFileSelect = useCallback((
+    materialId: string,
+    fotoSlot: "foto1" | "foto2",
+    file?: File
+  ) => {
+    try {
+      if (!file) {
+        return;
+      }
+
+      // BUG 6: Validar tipo de arquivo
+      if (!file.type.startsWith('image/')) {
+        console.error('[MaterialsSection] Arquivo não é uma imagem:', {
+          fileName: file.name,
+          fileType: file.type,
+        });
+        // Mostrar erro para usuário seria ideal aqui
+        return;
+      }
+
+      // BUG 3: Chamar handler com tratamento de erro
+      onFileSelect(materialId, fotoSlot, file);
+    } catch (error) {
+      // BUG 3: Tratamento de erro com logging
+      console.error('[MaterialsSection] Erro ao selecionar arquivo:', {
+        materialId,
+        fotoSlot,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      // Mostrar toast de erro para usuário seria ideal aqui
+    }
+  }, [onFileSelect]);
 
   return (
     <Card className="mb-6 border border-slate-200 shadow-sm hover:shadow-lg hover:border-blue-200 transition-all duration-200 dark:border-slate-700 dark:bg-slate-900">
@@ -208,30 +273,21 @@ export function MaterialsSection({
                         </button>
                       </div>
                     )}
+                    {/* CORREÇÃO BUG 2: Sintaxe correta - accept e capture separados */}
                     <input
-                      ref={(el) => {
-                        if (!fileInputRefs.current[material.id]) {
-                          fileInputRefs.current[material.id] = {};
-                        }
-                        fileInputRefs.current[material.id]["foto1-gallery"] = el;
-                      }}
+                      ref={createRefCallback(material.id, "foto1-gallery")}
                       type="file"
                       accept="image/*"
                       style={{ display: "none" }}
-                      onChange={(e) => onFileSelect(material.id, "foto1", e.target.files?.[0])}
+                      onChange={(e) => handleFileSelect(material.id, "foto1", e.target.files?.[0])}
                     />
                     <input
-                      ref={(el) => {
-                        if (!fileInputRefs.current[material.id]) {
-                          fileInputRefs.current[material.id] = {};
-                        }
-                        fileInputRefs.current[material.id]["foto1-camera"] = el;
-                      }}
+                      ref={createRefCallback(material.id, "foto1-camera")}
                       type="file"
-                      accept="image/*;capture=environment"
+                      accept="image/*"
                       capture="environment"
                       style={{ display: "none" }}
-                      onChange={(e) => onFileSelect(material.id, "foto1", e.target.files?.[0])}
+                      onChange={(e) => handleFileSelect(material.id, "foto1", e.target.files?.[0])}
                     />
                   </div>
 
@@ -274,30 +330,21 @@ export function MaterialsSection({
                         </button>
                       </div>
                     )}
+                    {/* CORREÇÃO BUG 2: Sintaxe correta - accept e capture separados */}
                     <input
-                      ref={(el) => {
-                        if (!fileInputRefs.current[material.id]) {
-                          fileInputRefs.current[material.id] = {};
-                        }
-                        fileInputRefs.current[material.id]["foto2-gallery"] = el;
-                      }}
+                      ref={createRefCallback(material.id, "foto2-gallery")}
                       type="file"
                       accept="image/*"
                       style={{ display: "none" }}
-                      onChange={(e) => onFileSelect(material.id, "foto2", e.target.files?.[0])}
+                      onChange={(e) => handleFileSelect(material.id, "foto2", e.target.files?.[0])}
                     />
                     <input
-                      ref={(el) => {
-                        if (!fileInputRefs.current[material.id]) {
-                          fileInputRefs.current[material.id] = {};
-                        }
-                        fileInputRefs.current[material.id]["foto2-camera"] = el;
-                      }}
+                      ref={createRefCallback(material.id, "foto2-camera")}
                       type="file"
-                      accept="image/*;capture=environment"
+                      accept="image/*"
                       capture="environment"
                       style={{ display: "none" }}
-                      onChange={(e) => onFileSelect(material.id, "foto2", e.target.files?.[0])}
+                      onChange={(e) => handleFileSelect(material.id, "foto2", e.target.files?.[0])}
                     />
                   </div>
                 </div>
