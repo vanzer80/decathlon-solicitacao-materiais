@@ -22,6 +22,7 @@ import { SuccessAnimation } from "@/components/SuccessAnimation";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { lazy, Suspense } from "react";
 import { DiagnosticModal } from "@/components/DiagnosticModal";
+import { compressImage, formatFileSize, calculateBandwidthSavings } from "@/services/imageCompressionService";
 
 const MainDataSection = lazy(() => import("@/components/MainDataSection").then(m => ({ default: m.MainDataSection })));
 const TeamServiceSection = lazy(() => import("@/components/TeamServiceSection").then(m => ({ default: m.TeamServiceSection })));
@@ -269,24 +270,81 @@ export default function SolicitacaoForm() {
     }
   };
 
-  const handleFileSelect = (materialId: string, fotoSlot: "foto1" | "foto2", file?: File) => {
+  const handleFileSelect = async (materialId: string, fotoSlot: "foto1" | "foto2", file?: File) => {
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      setMaterials((prev) =>
-        prev.map((m) =>
-          m.id === materialId
-            ? {
-                ...m,
-                [fotoSlot]: file,
-                [`${fotoSlot}Preview`]: e.target?.result as string,
-              }
-            : m
-        )
+    // Mostrar toast de compressão
+    const toastId = `compress-${materialId}-${fotoSlot}`;
+    setToasts((prev) => [...prev, {
+      id: toastId,
+      type: 'info',
+      title: 'Comprimindo imagem...',
+      message: 'Aguarde enquanto otimizamos a foto para upload rápido',
+    }]);
+
+    try {
+      // Comprimir imagem
+      const result = await compressImage(file, false, (progress) => {
+        // Atualizar progresso
+        setUploadProgress((prev) => ({
+          ...prev,
+          [toastId]: progress,
+        }));
+      });
+
+      if (!result.success) {
+        throw new Error(result.error || 'Erro ao comprimir imagem');
+      }
+
+      // Calcular economia
+      const savings = calculateBandwidthSavings(result.originalSize, result.compressedSize);
+
+      // Remover toast de compressão
+      setToasts((prev) => prev.filter((t) => t.id !== toastId));
+
+      // Mostrar sucesso com economia
+      setToasts((prev) => [...prev, {
+        id: `success-${toastId}`,
+        type: 'success',
+        title: 'Imagem comprimida com sucesso!',
+        message: `Redução: ${result.compressionRatio.toFixed(0)}% | Economizado: ${savings.formattedSaved}`,
+      }]);
+
+      // Converter blob para File
+      const compressedFile = new File(
+        [result.compressedFile],
+        file.name,
+        { type: 'image/jpeg' }
       );
-    };
-    reader.readAsDataURL(file);
+
+      // Ler como data URL
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setMaterials((prev) =>
+          prev.map((m) =>
+            m.id === materialId
+              ? {
+                  ...m,
+                  [fotoSlot]: compressedFile,
+                  [`${fotoSlot}Preview`]: e.target?.result as string,
+                }
+              : m
+          )
+        );
+      };
+      reader.readAsDataURL(result.compressedFile);
+    } catch (error) {
+      // Remover toast de compressão
+      setToasts((prev) => prev.filter((t) => t.id !== toastId));
+
+      // Mostrar erro
+      setToasts((prev) => [...prev, {
+        id: `error-${toastId}`,
+        type: 'error',
+        title: 'Erro ao comprimir imagem',
+        message: error instanceof Error ? error.message : 'Tente novamente',
+      }]);
+    }
   };
 
   const handleRemovePhoto = (materialId: string, fotoSlot: "foto1" | "foto2") => {
