@@ -1,11 +1,11 @@
 {
   "version": "5",
   "dialect": "mysql",
-  "id": "4dd9a246-430d-457c-b432-75c53ceda844",
-  "prevId": "db9be692-3a05-48a4-8edb-c4347546bca2",
+  "id": "b52a4424-8ade-4713-ad9c-7fba2f29ce3b",
+  "prevId": "884eac1b-f05b-48a3-983c-b7b0a3ff12f5",
   "tables": {
-    "material_items": {
-      "name": "material_items",
+    "materiais": {
+      "name": "materiais",
       "columns": {
         "id": {
           "name": "id",
@@ -14,22 +14,29 @@
           "notNull": true,
           "autoincrement": true
         },
-        "request_id": {
-          "name": "request_id",
+        "solicitacaoId": {
+          "name": "solicitacaoId",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "requestId": {
+          "name": "requestId",
           "type": "varchar(64)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
-        "material_descricao": {
-          "name": "material_descricao",
-          "type": "varchar(255)",
+        "materialDescricao": {
+          "name": "materialDescricao",
+          "type": "text",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
-        "material_especificacao": {
-          "name": "material_especificacao",
+        "materialEspecificacao": {
+          "name": "materialEspecificacao",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
@@ -44,34 +51,34 @@
         },
         "unidade": {
           "name": "unidade",
-          "type": "varchar(50)",
+          "type": "varchar(20)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
         "urgencia": {
           "name": "urgencia",
-          "type": "varchar(50)",
+          "type": "varchar(20)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
-        "foto1_url": {
-          "name": "foto1_url",
+        "foto1Url": {
+          "name": "foto1Url",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
-        "foto2_url": {
-          "name": "foto2_url",
+        "foto2Url": {
+          "name": "foto2Url",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
-        "created_at": {
-          "name": "created_at",
+        "createdAt": {
+          "name": "createdAt",
           "type": "timestamp",
           "primaryKey": false,
           "notNull": true,
@@ -82,8 +89,8 @@
       "indexes": {},
       "foreignKeys": {},
       "compositePrimaryKeys": {
-        "material_items_id": {
-          "name": "material_items_id",
+        "materiais_id": {
+          "name": "materiais_id",
           "columns": [
             "id"
           ]
@@ -92,8 +99,8 @@
       "uniqueConstraints": {},
       "checkConstraint": {}
     },
-    "material_requests": {
-      "name": "material_requests",
+    "solicitacoes": {
+      "name": "solicitacoes",
       "columns": {
         "id": {
           "name": "id",
@@ -102,92 +109,100 @@
           "notNull": true,
           "autoincrement": true
         },
-        "request_id": {
-          "name": "request_id",
+        "requestId": {
+          "name": "requestId",
           "type": "varchar(64)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
-        "timestamp_envio": {
-          "name": "timestamp_envio",
+        "timestampEnvio": {
+          "name": "timestampEnvio",
           "type": "timestamp",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
-        "loja_id": {
-          "name": "loja_id",
-          "type": "int",
+        "lojaId": {
+          "name": "lojaId",
+          "type": "varchar(10)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
-        "loja_label": {
-          "name": "loja_label",
-          "type": "varchar(255)",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "solicitante_nome": {
-          "name": "solicitante_nome",
-          "type": "varchar(255)",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "solicitante_telefone": {
-          "name": "solicitante_telefone",
-          "type": "varchar(20)",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "numero_chamado": {
-          "name": "numero_chamado",
-          "type": "varchar(50)",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "tipo_equipe": {
-          "name": "tipo_equipe",
-          "type": "varchar(50)",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "empresa_terceira": {
-          "name": "empresa_terceira",
-          "type": "varchar(255)",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "tipo_servico": {
-          "name": "tipo_servico",
-          "type": "varchar(50)",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "sistema_afetado": {
-          "name": "sistema_afetado",
-          "type": "varchar(50)",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "descricao_geral_servico": {
-          "name": "descricao_geral_servico",
+        "lojaLabel": {
+          "name": "lojaLabel",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
-        "created_at": {
-          "name": "created_at",
+        "solicitanteNome": {
+          "name": "solicitanteNome",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "solicitanteTelefone": {
+          "name": "solicitanteTelefone",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "numeroChamado": {
+          "name": "numeroChamado",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "tipoEquipe": {
+          "name": "tipoEquipe",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "empresaTerceira": {
+          "name": "empresaTerceira",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "tipoServico": {
+          "name": "tipoServico",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "sistemaAfetado": {
+          "name": "sistemaAfetado",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "descricaoGeralServico": {
+          "name": "descricaoGeralServico",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "statusCompra": {
+          "name": "statusCompra",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'Recebido'"
+        },
+        "createdAt": {
+          "name": "createdAt",
           "type": "timestamp",
           "primaryKey": false,
           "notNull": true,
@@ -198,18 +213,18 @@
       "indexes": {},
       "foreignKeys": {},
       "compositePrimaryKeys": {
-        "material_requests_id": {
-          "name": "material_requests_id",
+        "solicitacoes_id": {
+          "name": "solicitacoes_id",
           "columns": [
             "id"
           ]
         }
       },
       "uniqueConstraints": {
-        "material_requests_request_id_unique": {
-          "name": "material_requests_request_id_unique",
+        "solicitacoes_requestId_unique": {
+          "name": "solicitacoes_requestId_unique",
           "columns": [
-            "request_id"
+            "requestId"
           ]
         }
       },

@@ -6,28 +6,48 @@
 export type * from "../drizzle/schema";
 export * from "./_core/errors";
 
-// Tipos para solicitação de materiais
+import { TIPOS_EQUIPE, TIPOS_SERVICO, SISTEMAS_AFETADOS, UNIDADES, URGENCIAS } from "./constants";
 
-export interface LojaOption {
-  Loja_ID: number;
-  Loja_Label: string;
+export type TipoEquipe = (typeof TIPOS_EQUIPE)[number];
+export type TipoServico = (typeof TIPOS_SERVICO)[number];
+export type SistemaAfetado = (typeof SISTEMAS_AFETADOS)[number];
+export type Unidade = (typeof UNIDADES)[number];
+export type Urgencia = (typeof URGENCIAS)[number];
+
+export interface Loja {
+  id: string;
+  label: string;
 }
 
-export interface MaterialItemPayload {
-  material_descricao: string;
-  material_especificacao: string;
+export interface MaterialItem {
+  descricao: string;
+  especificacao?: string;
   quantidade: number;
-  unidade: string;
-  urgencia: string;
-  foto1_url: string;
-  foto2_url: string;
+  unidade: Unidade;
+  urgencia: Urgencia;
+  foto1?: File;
+  foto2?: File;
 }
 
-export interface SolicitacaoPayload {
+export interface SolicitacaoFormData {
+  lojaId: string;
+  lojaLabel: string;
+  solicitanteNome: string;
+  solicitanteTelefone?: string;
+  numeroChamado?: string;
+  tipoEquipe: TipoEquipe;
+  empresaTerceira?: string;
+  tipoServico: TipoServico;
+  sistemaAfetado: SistemaAfetado;
+  descricaoGeralServico: string;
+  materiais: MaterialItem[];
+}
+
+export interface WebhookPayload {
   request_id: string;
   timestamp_envio: string;
   header: {
-    loja_id: number;
+    loja_id: string;
     loja_label: string;
     solicitante_nome: string;
     solicitante_telefone: string;
@@ -38,10 +58,19 @@ export interface SolicitacaoPayload {
     sistema_afetado: string;
     descricao_geral_servico: string;
   };
-  items: MaterialItemPayload[];
+  items: Array<{
+    material_descricao: string;
+    material_especificacao: string;
+    quantidade: number;
+    unidade: string;
+    urgencia: string;
+    foto1_url: string;
+    foto2_url: string;
+  }>;
 }
 
 export interface WebhookResponse {
   ok: boolean;
   message?: string;
+  error?: string;
 }

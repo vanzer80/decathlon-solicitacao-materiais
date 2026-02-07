@@ -1,81 +1,85 @@
-import { describe, expect, it } from "vitest";
-import { generateRequestId, isValidWebhookResponse, isHtmlResponse } from "../shared/utils";
+import { describe, it, expect } from 'vitest';
+import { generateRequestId, validateImageFile, formatPhoneNumber } from '../shared/utils';
 
-describe("generateRequestId", () => {
-  it("should generate a valid Request_ID in format YYYYMMDD-HHMMSS-6CHARS", () => {
+// Testes para utilitários compartilhados
+
+describe('generateRequestId', () => {
+  it('deve gerar um Request ID no formato YYYYMMDD-HHMMSS-6CHARS', () => {
     const requestId = generateRequestId();
-    
-    // Verifica o padrão YYYYMMDD-HHMMSS-6CHARS
-    const pattern = /^\d{8}-\d{6}-[A-Z0-9]{6}$/;
-    expect(requestId).toMatch(pattern);
+    const regex = /^\d{8}-\d{6}-[A-Z0-9]{6}$/;
+    expect(requestId).toMatch(regex);
   });
 
-  it("should generate unique Request_IDs", () => {
-    const id1 = generateRequestId();
-    const id2 = generateRequestId();
-    
-    expect(id1).not.toBe(id2);
+  it('deve gerar IDs únicos', () => {
+    const ids = new Set();
+    for (let i = 0; i < 10; i++) {
+      ids.add(generateRequestId());
+    }
+    expect(ids.size).toBe(10);
   });
 
-  it("should have valid date components", () => {
+  it('deve ter data válida no início do ID', () => {
     const requestId = generateRequestId();
-    const [dateTime] = requestId.split("-");
-    const [year, month, day] = [
-      dateTime.substring(0, 4),
-      dateTime.substring(4, 6),
-      dateTime.substring(6, 8),
-    ];
+    const datePart = requestId.substring(0, 8);
+    const year = parseInt(datePart.substring(0, 4));
+    const month = parseInt(datePart.substring(4, 6));
+    const day = parseInt(datePart.substring(6, 8));
 
-    const yearNum = parseInt(year);
-    const monthNum = parseInt(month);
-    const dayNum = parseInt(day);
-
-    expect(yearNum).toBeGreaterThanOrEqual(2020);
-    expect(monthNum).toBeGreaterThanOrEqual(1);
-    expect(monthNum).toBeLessThanOrEqual(12);
-    expect(dayNum).toBeGreaterThanOrEqual(1);
-    expect(dayNum).toBeLessThanOrEqual(31);
+    expect(year).toBeGreaterThanOrEqual(2020);
+    expect(month).toBeGreaterThanOrEqual(1);
+    expect(month).toBeLessThanOrEqual(12);
+    expect(day).toBeGreaterThanOrEqual(1);
+    expect(day).toBeLessThanOrEqual(31);
   });
 });
 
-describe("isValidWebhookResponse", () => {
-  it("should return true for valid response with ok: true", () => {
-    expect(isValidWebhookResponse({ ok: true })).toBe(true);
-    expect(isValidWebhookResponse({ ok: true, message: "Success" })).toBe(true);
+describe('validateImageFile', () => {
+  it('deve validar arquivo de imagem válido', () => {
+    const file = new File(['test'], 'test.jpg', { type: 'image/jpeg' });
+    const result = validateImageFile(file);
+    expect(result.valid).toBe(true);
+    expect(result.error).toBeUndefined();
   });
 
-  it("should return false for response with ok: false", () => {
-    expect(isValidWebhookResponse({ ok: false })).toBe(false);
+  it('deve rejeitar arquivo não-imagem', () => {
+    const file = new File(['test'], 'test.pdf', { type: 'application/pdf' });
+    const result = validateImageFile(file);
+    expect(result.valid).toBe(false);
+    expect(result.error?.toLowerCase()).toContain('imagens');
   });
 
-  it("should return false for non-object responses", () => {
-    expect(isValidWebhookResponse(null)).toBe(false);
-    expect(isValidWebhookResponse(undefined)).toBe(false);
-    expect(isValidWebhookResponse("string")).toBe(false);
-    expect(isValidWebhookResponse(123)).toBe(false);
+  it('deve rejeitar arquivo muito grande', () => {
+    // Criar um arquivo simulado com tamanho grande
+    const largeBuffer = Buffer.alloc(6 * 1024 * 1024);
+    const file = new File([largeBuffer], 'large.jpg', { type: 'image/jpeg' });
+    const result = validateImageFile(file, 5);
+    expect(result.valid).toBe(false);
+    expect(result.error?.toLowerCase()).toContain('tamanho');
   });
 
-  it("should return false for object without ok property", () => {
-    expect(isValidWebhookResponse({})).toBe(false);
-    expect(isValidWebhookResponse({ message: "Success" })).toBe(false);
+  it('deve aceitar arquivo dentro do limite de tamanho', () => {
+    const content = Buffer.alloc(2 * 1024 * 1024);
+    const file = new File([content], 'test.jpg', { type: 'image/jpeg' });
+    const result = validateImageFile(file, 5);
+    expect(result.valid).toBe(true);
+    expect(result.error).toBeUndefined();
   });
 });
 
-describe("isHtmlResponse", () => {
-  it("should detect HTML responses", () => {
-    expect(isHtmlResponse("<!DOCTYPE html>")).toBe(true);
-    expect(isHtmlResponse("<html>")).toBe(true);
-    expect(isHtmlResponse("  <!DOCTYPE html>")).toBe(true);
-    expect(isHtmlResponse("  <html>")).toBe(true);
+describe('formatPhoneNumber', () => {
+  it('deve formatar número de telefone com 11 dígitos', () => {
+    const formatted = formatPhoneNumber('11999999999');
+    expect(formatted).toBe('(11) 99999-9999');
   });
 
-  it("should return false for JSON responses", () => {
-    expect(isHtmlResponse('{"ok": true}')).toBe(false);
-    expect(isHtmlResponse('{"error": "not found"}')).toBe(false);
+  it('deve retornar número original se não tiver 11 dígitos', () => {
+    const phone = '1234567';
+    const formatted = formatPhoneNumber(phone);
+    expect(formatted).toBe(phone);
   });
 
-  it("should return false for plain text", () => {
-    expect(isHtmlResponse("Success")).toBe(false);
-    expect(isHtmlResponse("Error message")).toBe(false);
+  it('deve remover caracteres não-numéricos antes de formatar', () => {
+    const formatted = formatPhoneNumber('(11) 99999-9999');
+    expect(formatted).toBe('(11) 99999-9999');
   });
 });
