@@ -75,3 +75,29 @@
 - [x] Testar animação em diferentes velocidades de conexão
 - [x] Animação de sucesso com CheckCircle
 - [x] Animação de erro com AlertCircle
+
+
+## Auditoria Profunda - Problema: Dados Não Chegam na Planilha
+
+### Fase 1: Investigação
+- [ ] Verificar fluxo completo de envio de dados
+- [ ] Analisar logs do servidor
+- [ ] Verificar resposta do webhook
+- [ ] Validar estrutura do payload
+- [ ] Verificar upload de fotos
+- [ ] Analisar tratamento de erros
+- [ ] Revisar autenticação com Apps Script
+
+### Fase 2: Correções
+- [ ] Corrigir problemas identificados
+- [ ] Adicionar logging detalhado
+- [ ] Melhorar tratamento de erros
+- [ ] Validar dados antes do envio
+- [ ] Testar fluxo completo
+
+### Fase 3: Validação
+- [ ] Testar envio com 1 material
+- [ ] Testar envio com múltiplos materiais
+- [ ] Testar com fotos
+- [ ] Verificar dados na planilha
+- [ ] Validar URLs das fotos

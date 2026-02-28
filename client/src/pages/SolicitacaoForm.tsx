@@ -314,7 +314,7 @@ export default function SolicitacaoForm() {
       // Aguardar animação de sucesso antes de mostrar tela de sucesso
       setTimeout(() => {
         setIsSubmitting(false);
-        setSuccessRequestId(result.requestId);
+        setSuccessRequestId(result.requestId || requestId);
         toast.success('Solicitação enviada com sucesso!');
       }, 2000);
     } catch (error) {
