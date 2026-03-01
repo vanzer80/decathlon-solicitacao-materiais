@@ -80,20 +80,20 @@
 ## Auditoria Profunda - Problema: Dados Não Chegam na Planilha
 
 ### Fase 1: Investigação
-- [ ] Verificar fluxo completo de envio de dados
-- [ ] Analisar logs do servidor
-- [ ] Verificar resposta do webhook
-- [ ] Validar estrutura do payload
-- [ ] Verificar upload de fotos
-- [ ] Analisar tratamento de erros
-- [ ] Revisar autenticação com Apps Script
+- [x] Verificar fluxo completo de envio de dados
+- [x] Analisar logs do servidor
+- [x] Verificar resposta do webhook
+- [x] Validar estrutura do payload
+- [x] Verificar upload de fotos
+- [x] Analisar tratamento de erros
+- [x] Revisar autenticação com Apps Script
 
 ### Fase 2: Correções
-- [ ] Corrigir problemas identificados
-- [ ] Adicionar logging detalhado
-- [ ] Melhorar tratamento de erros
-- [ ] Validar dados antes do envio
-- [ ] Testar fluxo completo
+- [x] Corrigir problemas identificados
+- [x] Adicionar logging detalhado
+- [x] Melhorar tratamento de erros
+- [x] Validar dados antes do envio
+- [x] Testar fluxo completo
 
 ### Fase 3: Validação
 - [ ] Testar envio com 1 material
@@ -101,3 +101,13 @@
 - [ ] Testar com fotos
 - [ ] Verificar dados na planilha
 - [ ] Validar URLs das fotos
+
+## Redesign Mobile Premium (Imagem 2) - APENAS UI/UX
+- [x] Reestruturar JSX para layout mobile-first 1 coluna
+- [x] Implementar cards compactos com ícones e descrições
+- [x] Refatorar campos para ocupar 100% largura (w-full)
+- [x] Implementar slots de fotos com ícones e preview
+- [x] Fixar botão "Enviar Solicitação" no final
+- [x] Remover botão "Salvar" extra
+- [x] Reiniciar servidor para aplicar alterações
+- [ ] Testar build e smoke test (sem fotos + com fotos)
