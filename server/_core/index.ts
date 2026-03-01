@@ -8,6 +8,7 @@ import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { setupUploadEndpoint } from "../upload";
+import { setupStoresEndpoint } from "../stores";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -49,6 +50,8 @@ async function startServer() {
   registerOAuthRoutes(app);
   // Upload endpoint
   setupUploadEndpoint(app);
+  // Stores endpoint
+  setupStoresEndpoint(app);
   // tRPC API
   app.use(
     "/api/trpc",

@@ -4,7 +4,8 @@
  * Cache TTL: 5 minutos
  */
 
-import { ENV } from '../_core/env';
+// Nota: URL do Apps Script e token são hardcoded aqui
+// Em produção, considere mover para variáveis de ambiente
 
 interface Store {
   loja_id: string;
@@ -87,25 +88,28 @@ export async function getStores(): Promise<StoresResponse> {
  * Buscar lojas do Apps Script
  */
 async function fetchStoresFromAppsScript(): Promise<StoresResponse> {
-  const webhookUrl = ENV.forgeApiUrl; // URL base do webhook
-  const webhookToken = ENV.forgeApiKey; // Token de autenticação
+  // URL oficial do Apps Script Web App
+  const appsScriptUrl = 'https://script.google.com/macros/s/AKfycbzng6nVkKFWFhzoa6NdaoYFr-HKFvvqsG7vwzSVAcgahq3cnv9aOjR3bR_haQFlLuZT/exec';
+  const token = 'DECATHLON-2026';
 
   // Construir URL com parâmetros
-  const url = new URL(webhookUrl);
+  const url = new URL(appsScriptUrl);
   url.searchParams.set('action', 'stores');
-  url.searchParams.set('token', webhookToken);
+  url.searchParams.set('token', token);
 
-  console.log('[Stores] Requisição para:', url.toString().replace(webhookToken, '***'));
+  console.log('[Stores] Requisição para:', url.toString().replace(token, '***'));
 
   const response = await fetch(url.toString(), {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
-      'X-Webhook-Token': webhookToken,
+      'X-Webhook-Token': token,
     },
   });
 
   if (!response.ok) {
+    const errorText = await response.text();
+    console.error('[Stores] Resposta do Apps Script:', errorText.substring(0, 200));
     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
   }
 
