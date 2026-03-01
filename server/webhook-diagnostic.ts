@@ -3,7 +3,7 @@
  * Execute com: npx ts-node server/webhook-diagnostic.ts
  */
 
-const WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbz5-qhpg3UDrWSP0pDydcnK9olN8dF7fCzI0oFXcRIs-AhnAiy_xQcpB0mhaddxaEBK/exec';
+const WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbzdonIA5DxB4s2fwlZphru10RSDRPxKeG_p61zn0h0CPt6EDOf4_WBO3QStGwmhZchW/exec'; // URL OFICIAL source of truth
 const TOKEN = 'DECATHLON-2026';
 
 async function testWebhook() {

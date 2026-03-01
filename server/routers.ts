@@ -138,13 +138,14 @@ export const appRouter = router({
           console.log('[Webhook] Items count:', payload.items.length);
           console.log('[Webhook] Items:', JSON.stringify(payload.items, null, 2));
 
-          // Enviar para webhook
-          const webhookUrlString = process.env.WEBHOOK_URL || 'https://script.google.com/macros/s/AKfycbz5-qhpg3UDrWSP0pDydcnK9olN8dF7fCzI0oFXcRIs-AhnAiy_xQcpB0mhaddxaEBK/exec';
+          // Enviar para webhook (URL OFICIAL source of truth)
+          const webhookUrlString = process.env.WEBHOOK_URL || 'https://script.google.com/macros/s/AKfycbzdonIA5DxB4s2fwlZphru10RSDRPxKeG_p61zn0h0CPt6EDOf4_WBO3QStGwmhZchW/exec';
           const webhookUrl = new URL(webhookUrlString);
           webhookUrl.searchParams.append('token', 'DECATHLON-2026');
 
-          console.log('[Webhook] Enviando para:', webhookUrl.toString().split('?')[0]);
-          console.log('[Webhook] Token:', 'DECATHLON-2026');
+          const urlMasked = webhookUrl.toString().replace('DECATHLON-2026', 'DECATHLON-****');
+          console.log('[Webhook] POST URL (masked):', urlMasked);
+          console.log('[Webhook] Token: DECATHLON-****');
 
           // ✅ CORREÇÃO 4: Melhorar tratamento de resposta
           const response = await fetch(webhookUrl.toString(), {
