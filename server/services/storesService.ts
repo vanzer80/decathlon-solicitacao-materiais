@@ -88,8 +88,8 @@ export async function getStores(): Promise<StoresResponse> {
  * Buscar lojas do Apps Script
  */
 async function fetchStoresFromAppsScript(): Promise<StoresResponse> {
-  // URL oficial do Apps Script Web App
-  const appsScriptUrl = 'https://script.google.com/macros/s/AKfycbzng6nVkKFWFhzoa6NdaoYFr-HKFvvqsG7vwzSVAcgahq3cnv9aOjR3bR_haQFlLuZT/exec';
+  // URL oficial do Apps Script Web App (source of truth)
+  const appsScriptUrl = 'https://script.google.com/macros/s/AKfycbzdonIA5DxB4s2fwlZphru10RSDRPxKeG_p61zn0h0CPt6EDOf4_WBO3QStGwmhZchW/exec';
   const token = 'DECATHLON-2026';
 
   // Construir URL com parâmetros
