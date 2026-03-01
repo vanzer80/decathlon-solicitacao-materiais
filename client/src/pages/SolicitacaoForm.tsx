@@ -140,6 +140,12 @@ export default function SolicitacaoForm() {
     if (!files || files.length === 0) return;
 
     const file = files[0];
+    console.log(`[Upload] Arquivo selecionado - Material ${materialId}, Foto ${fotoIndex}:`, {
+      name: file.name,
+      type: file.type,
+      size: `${(file.size / 1024).toFixed(2)} KB`,
+    });
+
     if (!validateImageFile(file)) {
       toast.error('Arquivo inválido. Use apenas imagens (JPG, PNG, WebP) até 5MB');
       return;
@@ -147,21 +153,44 @@ export default function SolicitacaoForm() {
 
     setCompressingMaterial(materialId);
     try {
-      const compressed = await compressImage(file);
-      // Converter Blob para File se necessário
-      const compressedFile = compressed instanceof File ? compressed : new File([compressed], `photo-${Date.now()}.jpg`, { type: 'image/jpeg' });
+      console.log(`[Compress] Iniciando compressão...`);
+      const compressionResult = await compressImage(file);
+      console.log(`[Compress] Concluído:`, {
+        original: `${(compressionResult.originalSize / 1024).toFixed(2)} KB`,
+        compressed: `${(compressionResult.compressedSize / 1024).toFixed(2)} KB`,
+        reduction: `${compressionResult.reductionPercent}%`,
+      });
+
+      // ✅ CORREÇÃO: Extrair .blob de CompressionResult
+      const compressedFile = new File(
+        [compressionResult.blob],
+        `photo-${Date.now()}.jpg`,
+        { type: 'image/jpeg' }
+      );
+
+      console.log(`[File] Arquivo criado:`, {
+        name: compressedFile.name,
+        type: compressedFile.type,
+        size: `${(compressedFile.size / 1024).toFixed(2)} KB`,
+      });
+
       const reader = new FileReader();
       reader.onload = (e) => {
         const preview = e.target?.result as string;
         const fotoKey = `foto${fotoIndex}` as const;
         const previewKey = `foto${fotoIndex}Preview` as const;
+        console.log(`[Preview] Gerado para Foto ${fotoIndex}`);
         handleMaterialChange(materialId, fotoKey, compressedFile);
         handleMaterialChange(materialId, previewKey, preview);
         toast.success(`Foto ${fotoIndex} comprimida e adicionada`);
       };
+      reader.onerror = () => {
+        console.error(`[FileReader] Erro ao ler arquivo para preview`);
+        toast.error('Erro ao gerar preview da foto');
+      };
       reader.readAsDataURL(compressedFile);
     } catch (error) {
-      console.error('Erro ao comprimir imagem:', error);
+      console.error('[Compress] Erro:', error);
       toast.error('Erro ao processar imagem');
     } finally {
       setCompressingMaterial(null);
@@ -221,6 +250,60 @@ export default function SolicitacaoForm() {
       const requestId = generateRequestId();
       const validMateriais = materiais.filter(m => m.descricao && m.quantidade > 0 && m.unidade && m.urgencia);
 
+      // ✅ CORREÇÃO: Fazer upload de fotos para S3 e obter URLs públicas
+      const uploadedMateriais = await Promise.all(
+        validMateriais.map(async (m) => {
+          let foto1Url = '';
+          let foto2Url = '';
+
+          // Upload foto 1 se existir
+          if (m.foto1 && m.foto1 instanceof File) {
+            try {
+              const formData = new FormData();
+              formData.append('file', m.foto1);
+              const uploadRes = await fetch('/api/upload', {
+                method: 'POST',
+                body: formData,
+              });
+              if (uploadRes.ok) {
+                const uploadData = await uploadRes.json();
+                foto1Url = uploadData.url || '';
+              }
+            } catch (err) {
+              console.error('Erro ao fazer upload de foto 1:', err);
+            }
+          }
+
+          // Upload foto 2 se existir
+          if (m.foto2 && m.foto2 instanceof File) {
+            try {
+              const formData = new FormData();
+              formData.append('file', m.foto2);
+              const uploadRes = await fetch('/api/upload', {
+                method: 'POST',
+                body: formData,
+              });
+              if (uploadRes.ok) {
+                const uploadData = await uploadRes.json();
+                foto2Url = uploadData.url || '';
+              }
+            } catch (err) {
+              console.error('Erro ao fazer upload de foto 2:', err);
+            }
+          }
+
+          return {
+            descricao: m.descricao,
+            especificacao: m.especificacao || '',
+            quantidade: m.quantidade,
+            unidade: m.unidade,
+            urgencia: m.urgencia,
+            foto1Url,  // ✅ URL real ou vazio
+            foto2Url,  // ✅ URL real ou vazio
+          };
+        })
+      );
+
       const payload = {
         requestId,
         timestampEnvio: new Date().toISOString(),
@@ -234,17 +317,18 @@ export default function SolicitacaoForm() {
         tipoServico: formData.tipoServico,
         sistemaAfetado: formData.sistemaAfetado,
         descricaoGeralServico: formData.descricaoGeralServico,
-        materiais: validMateriais.map(m => ({
-          descricao: m.descricao,
-          especificacao: m.especificacao || '',
-          quantidade: m.quantidade,
-          unidade: m.unidade,
-          urgencia: m.urgencia,
-          foto1Url: m.foto1 ? '' : '',
-          foto2Url: m.foto2 ? '' : '',
-        })),
+        materiais: uploadedMateriais,
       };
 
+      console.log('[Submit] Payload com URLs de fotos:', {
+        requestId: payload.requestId,
+        materiais: payload.materiais.map((m, i) => ({
+          index: i,
+          descricao: m.descricao,
+          foto1Url: m.foto1Url ? '✅ ' + m.foto1Url.substring(0, 50) + '...' : '❌ vazio',
+          foto2Url: m.foto2Url ? '✅ ' + m.foto2Url.substring(0, 50) + '...' : '❌ vazio',
+        })),
+      });
       const result = await submitMutation.mutateAsync(payload);
       setSuccessRequestId(result.requestId);
       setSubmitSuccess(true);
