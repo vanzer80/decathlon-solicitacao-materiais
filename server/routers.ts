@@ -3,6 +3,7 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
 import { storagePut } from "./storage";
+import { getStores } from "./services/storesService";
 import { z } from "zod";
 
 // Schema de validação para entrada
@@ -41,6 +42,35 @@ export const appRouter = router({
       return {
         success: true,
       } as const;
+    }),
+  }),
+
+  stores: router({
+    list: publicProcedure.query(async () => {
+      try {
+        const response = await getStores();
+        if (!response.ok) {
+          console.error('[Stores] Erro ao buscar lojas:', response.error);
+          return {
+            ok: false,
+            stores: [],
+            error: response.error || 'Erro ao buscar lojas',
+          };
+        }
+        return {
+          ok: true,
+          stores: response.stores || [],
+          updatedAt: response.updatedAt,
+          count: response.count || 0,
+        };
+      } catch (error) {
+        console.error('[Stores] Erro na query:', error);
+        return {
+          ok: false,
+          stores: [],
+          error: error instanceof Error ? error.message : 'Erro desconhecido',
+        };
+      }
     }),
   }),
 

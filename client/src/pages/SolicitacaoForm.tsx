@@ -74,22 +74,60 @@ export default function SolicitacaoForm() {
   const [submitError, setSubmitError] = useState(false);
   const submitMutation = trpc.solicitacao.submit.useMutation();
 
-  // Carregar lojas
+  // Carregar lojas do backend com cache
   useEffect(() => {
     const loadLojas = async () => {
       try {
-        const response = await fetch('/lojas.json');
-        const data = await response.json();
-        setLojas(data);
-        setLojasLoaded(true);
+        console.log('[Stores] Carregando lojas do backend...');
+        const response = await trpc.stores.list.query();
+        
+        if (response.ok && response.stores) {
+          const formattedLojas = response.stores.map((store) => ({
+            id: store.loja_id,
+            label: store.loja_label,
+          }));
+          console.log(`[Stores] ${formattedLojas.length} lojas carregadas`);
+          setLojas(formattedLojas);
+        } else {
+          console.error('[Stores] Erro ao carregar:', response.error);
+          toast.error(response.error || 'Falha ao carregar lojas');
+        }
       } catch (error) {
-        console.error('Erro ao carregar lojas:', error);
-        toast.error('Erro ao carregar lista de lojas');
+        console.error('[Stores] Erro na requisição:', error);
+        toast.error('Falha ao carregar lojas. Tente novamente.');
+      } finally {
         setLojasLoaded(true);
       }
     };
     loadLojas();
   }, []);
+
+  // Função para atualizar lista de lojas manualmente
+  const handleRefreshStores = async () => {
+    try {
+      console.log('[Stores] Atualizando lista de lojas...');
+      setLojasLoaded(false);
+      const response = await trpc.stores.list.query();
+      
+      if (response.ok && response.stores) {
+        const formattedLojas = response.stores.map((store) => ({
+          id: store.loja_id,
+          label: store.loja_label,
+        }));
+        console.log(`[Stores] ${formattedLojas.length} lojas atualizadas`);
+        setLojas(formattedLojas);
+        toast.success(`${formattedLojas.length} lojas carregadas`);
+      } else {
+        console.error('[Stores] Erro ao atualizar:', response.error);
+        toast.error(response.error || 'Falha ao atualizar lojas');
+      }
+    } catch (error) {
+      console.error('[Stores] Erro ao atualizar:', error);
+      toast.error('Falha ao atualizar lojas. Tente novamente.');
+    } finally {
+      setLojasLoaded(true);
+    }
+  };
 
   // Filtrar lojas baseado na busca
   useEffect(() => {
@@ -419,9 +457,21 @@ export default function SolicitacaoForm() {
             <CardContent className="space-y-3">
               {/* Loja */}
               <div className="w-full">
-                <Label htmlFor="loja" className="text-sm font-semibold">
-                  Loja / Cluster <span className="text-red-500">*</span>
-                </Label>
+                <div className="flex items-center justify-between gap-2 mb-1">
+                  <Label htmlFor="loja" className="text-sm font-semibold">
+                    Loja / Cluster <span className="text-red-500">*</span>
+                  </Label>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleRefreshStores}
+                    disabled={!lojasLoaded}
+                    className="text-xs h-7 px-2 hover:bg-blue-50"
+                  >
+                    🔄 Atualizar
+                  </Button>
+                </div>
                 <div className="relative mt-1">
                   <Input
                     id="loja"
@@ -432,9 +482,10 @@ export default function SolicitacaoForm() {
                     onBlur={() => setTimeout(() => setLojaSearchOpen(false), 200)}
                     className={`w-full h-10 rounded-lg ${errors.lojaId ? 'border-red-500' : ''}`}
                   />
-                  {lojaSearchOpen && filteredLojas.length > 0 && (
+                  {lojaSearchOpen && (
                     <div className="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-lg shadow-lg z-10 max-h-40 overflow-y-auto mt-1">
-                      {filteredLojas.map(loja => (
+                      {filteredLojas.length > 0 ? (
+                        filteredLojas.map(loja => (
                         <button
                           key={loja.id}
                           type="button"
@@ -448,8 +499,13 @@ export default function SolicitacaoForm() {
                         >
                           <div className="font-semibold">{loja.label}</div>
                           <div className="text-xs text-gray-500">{loja.id}</div>
-                        </button>
-                      ))}
+                          </button>
+                        ))
+                      ) : (
+                        <div className="px-3 py-2 text-xs text-gray-500">
+                          {!lojasLoaded ? 'Carregando lojas...' : 'Nenhuma loja encontrada'}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
