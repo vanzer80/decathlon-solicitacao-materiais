@@ -148,16 +148,18 @@ export default function SolicitacaoForm() {
     setCompressingMaterial(materialId);
     try {
       const compressed = await compressImage(file);
+      // Converter Blob para File se necessário
+      const compressedFile = compressed instanceof File ? compressed : new File([compressed], `photo-${Date.now()}.jpg`, { type: 'image/jpeg' });
       const reader = new FileReader();
       reader.onload = (e) => {
         const preview = e.target?.result as string;
         const fotoKey = `foto${fotoIndex}` as const;
         const previewKey = `foto${fotoIndex}Preview` as const;
-        handleMaterialChange(materialId, fotoKey, compressed);
+        handleMaterialChange(materialId, fotoKey, compressedFile);
         handleMaterialChange(materialId, previewKey, preview);
         toast.success(`Foto ${fotoIndex} comprimida e adicionada`);
       };
-      reader.readAsDataURL(compressed);
+      reader.readAsDataURL(compressedFile);
     } catch (error) {
       console.error('Erro ao comprimir imagem:', error);
       toast.error('Erro ao processar imagem');
@@ -168,7 +170,10 @@ export default function SolicitacaoForm() {
 
   const handleCameraCapture = (blob: Blob, materialId: string, fotoIndex: 1 | 2) => {
     const file = new File([blob], `foto-${Date.now()}.jpg`, { type: 'image/jpeg' });
-    handleFotoChange(materialId, fotoIndex, new DataTransfer().items.add(file).dataTransfer?.files || new FileList());
+    // Criar FileList simulado com o arquivo
+    const dataTransfer = new DataTransfer();
+    dataTransfer.items.add(file);
+    handleFotoChange(materialId, fotoIndex, dataTransfer.files);
     setCameraOpen(false);
   };
 
