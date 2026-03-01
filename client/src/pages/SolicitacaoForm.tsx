@@ -506,133 +506,224 @@ export default function SolicitacaoForm() {
               </div>
               <CardDescription>Informações sobre o tipo de serviço</CardDescription>
             </CardHeader>
-            <CardContent>
-              <Tabs value={equipeTab} onValueChange={setEquipeTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-2 mb-4">
-                  <TabsTrigger value="propria">Equipe Própria</TabsTrigger>
-                  <TabsTrigger value="terceirizada">Terceirizada</TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="propria" className="space-y-4">
-                  <div>
-                    <Label htmlFor="tipo-equipe" className="font-semibold">
-                      Tipo de Equipe <span className="text-red-500">*</span>
-                    </Label>
-                    <Select
-                      value={formData.tipoEquipe}
-                      onValueChange={(value) => {
-                        handleFormChange('tipoEquipe', value);
-                        if (value !== 'Terceirizada') {
-                          handleFormChange('empresaTerceira', '');
-                        }
-                      }}
-                    >
-                      <SelectTrigger id="tipo-equipe" className={`mt-2 ${errors.tipoEquipe ? 'border-red-500' : ''}`}>
-                        <SelectValue placeholder="Selecione..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {TIPOS_EQUIPE.map(tipo => (
-                          <SelectItem key={tipo} value={tipo}>{tipo}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    {errors.tipoEquipe && <p className="text-sm text-red-500 mt-1">{errors.tipoEquipe}</p>}
-                  </div>
-                </TabsContent>
-
-                <TabsContent value="terceirizada" className="space-y-4">
-                  <div>
-                    <Label htmlFor="tipo-equipe-t" className="font-semibold">
-                      Tipo de Equipe <span className="text-red-500">*</span>
-                    </Label>
-                    <Select
-                      value={formData.tipoEquipe}
-                      onValueChange={(value) => handleFormChange('tipoEquipe', value)}
-                    >
-                      <SelectTrigger id="tipo-equipe-t" className={`mt-2 ${errors.tipoEquipe ? 'border-red-500' : ''}`}>
-                        <SelectValue placeholder="Selecione..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {TIPOS_EQUIPE.map(tipo => (
-                          <SelectItem key={tipo} value={tipo}>{tipo}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    {errors.tipoEquipe && <p className="text-sm text-red-500 mt-1">{errors.tipoEquipe}</p>}
-                  </div>
-
-                  <div>
-                    <Label htmlFor="empresa" className="font-semibold">
-                      Empresa Terceira <span className="text-red-500">*</span>
-                    </Label>
-                    <Input
-                      id="empresa"
-                      placeholder="Nome da empresa terceirizada"
-                      value={formData.empresaTerceira}
-                      onChange={(e) => handleFormChange('empresaTerceira', e.target.value)}
-                      className={`mt-2 ${errors.empresaTerceira ? 'border-red-500' : ''}`}
-                    />
-                    {errors.empresaTerceira && <p className="text-sm text-red-500 mt-1">{errors.empresaTerceira}</p>}
-                  </div>
-                </TabsContent>
-              </Tabs>
-
-              {/* Tipo de Serviço */}
-              <div className="mt-4">
-                <Label htmlFor="tipo-servico" className="font-semibold">
-                  Tipo de Serviço <span className="text-red-500">*</span>
-                </Label>
-                <Select
-                  value={formData.tipoServico}
-                  onValueChange={(value) => handleFormChange('tipoServico', value)}
-                >
-                  <SelectTrigger id="tipo-servico" className={`mt-2 ${errors.tipoServico ? 'border-red-500' : ''}`}>
-                    <SelectValue placeholder="Selecione..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {TIPOS_SERVICO.map(tipo => (
-                      <SelectItem key={tipo} value={tipo}>{tipo}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {errors.tipoServico && <p className="text-sm text-red-500 mt-1">{errors.tipoServico}</p>}
+            <CardContent className="w-full">
+              {/* Segmented Control Premium */}
+              <div className="w-full mb-6">
+                <div className="flex gap-2 w-full bg-gray-100 p-1 rounded-xl">
+                  <button
+                    type="button"
+                    onClick={() => setEquipeTab('propria')}
+                    className={`flex-1 py-3 px-4 rounded-lg font-medium transition-all duration-200 ${
+                      equipeTab === 'propria'
+                        ? 'bg-white shadow-md'
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                    style={equipeTab === 'propria' ? { color: '#0082C3' } : {}}
+                  >
+                    Equipe Própria
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEquipeTab('terceirizada')}
+                    className={`flex-1 py-3 px-4 rounded-lg font-medium transition-all duration-200 ${
+                      equipeTab === 'terceirizada'
+                        ? 'bg-white shadow-md'
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                    style={equipeTab === 'terceirizada' ? { color: '#0082C3' } : {}}
+                  >
+                    Terceirizada
+                  </button>
+                </div>
               </div>
 
-              {/* Sistema Afetado */}
-              <div className="mt-4">
-                <Label htmlFor="sistema" className="font-semibold">
-                  Sistema Afetado <span className="text-red-500">*</span>
-                </Label>
-                <Select
-                  value={formData.sistemaAfetado}
-                  onValueChange={(value) => handleFormChange('sistemaAfetado', value)}
-                >
-                  <SelectTrigger id="sistema" className={`mt-2 ${errors.sistemaAfetado ? 'border-red-500' : ''}`}>
-                    <SelectValue placeholder="Selecione..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {SISTEMAS_AFETADOS.map(sistema => (
-                      <SelectItem key={sistema} value={sistema}>{sistema}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {errors.sistemaAfetado && <p className="text-sm text-red-500 mt-1">{errors.sistemaAfetado}</p>}
-              </div>
+              {/* Grid de Campos */}
+              <div className="w-full">
+                {equipeTab === 'propria' && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
+                    {/* Tipo de Equipe */}
+                    <div className="w-full">
+                      <Label htmlFor="tipo-equipe" className="font-semibold">
+                        Tipo de Equipe <span className="text-red-500">*</span>
+                      </Label>
+                      <Select
+                        value={formData.tipoEquipe}
+                        onValueChange={(value) => {
+                          handleFormChange('tipoEquipe', value);
+                          if (value !== 'Terceirizada') {
+                            handleFormChange('empresaTerceira', '');
+                          }
+                        }}
+                      >
+                        <SelectTrigger id="tipo-equipe" className={`w-full h-12 mt-2 rounded-xl ${errors.tipoEquipe ? 'border-red-500' : ''}`}>
+                          <SelectValue placeholder="Selecione..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {TIPOS_EQUIPE.map(tipo => (
+                            <SelectItem key={tipo} value={tipo}>{tipo}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {errors.tipoEquipe && <p className="text-sm text-red-500 mt-1">{errors.tipoEquipe}</p>}
+                    </div>
 
-              {/* Descrição Geral do Serviço */}
-              <div className="mt-4">
-                <Label htmlFor="descricao" className="font-semibold">
-                  Descrição Geral do Serviço <span className="text-red-500">*</span>
-                </Label>
-                <Textarea
-                  id="descricao"
-                  placeholder="Descreva o serviço e o problema a ser resolvido..."
-                  value={formData.descricaoGeralServico}
-                  onChange={(e) => handleFormChange('descricaoGeralServico', e.target.value)}
-                  className={`mt-2 ${errors.descricaoGeralServico ? 'border-red-500' : ''}`}
-                  rows={3}
-                />
-                {errors.descricaoGeralServico && <p className="text-sm text-red-500 mt-1">{errors.descricaoGeralServico}</p>}
+                    {/* Tipo de Serviço */}
+                    <div className="w-full">
+                      <Label htmlFor="tipo-servico" className="font-semibold">
+                        Tipo de Serviço <span className="text-red-500">*</span>
+                      </Label>
+                      <Select
+                        value={formData.tipoServico}
+                        onValueChange={(value) => handleFormChange('tipoServico', value)}
+                      >
+                        <SelectTrigger id="tipo-servico" className={`w-full h-12 mt-2 rounded-xl ${errors.tipoServico ? 'border-red-500' : ''}`}>
+                          <SelectValue placeholder="Selecione..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {TIPOS_SERVICO.map(tipo => (
+                            <SelectItem key={tipo} value={tipo}>{tipo}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {errors.tipoServico && <p className="text-sm text-red-500 mt-1">{errors.tipoServico}</p>}
+                    </div>
+
+                    {/* Sistema Afetado */}
+                    <div className="w-full">
+                      <Label htmlFor="sistema" className="font-semibold">
+                        Sistema Afetado <span className="text-red-500">*</span>
+                      </Label>
+                      <Select
+                        value={formData.sistemaAfetado}
+                        onValueChange={(value) => handleFormChange('sistemaAfetado', value)}
+                      >
+                        <SelectTrigger id="sistema" className={`w-full h-12 mt-2 rounded-xl ${errors.sistemaAfetado ? 'border-red-500' : ''}`}>
+                          <SelectValue placeholder="Selecione..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {SISTEMAS_AFETADOS.map(sistema => (
+                            <SelectItem key={sistema} value={sistema}>{sistema}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {errors.sistemaAfetado && <p className="text-sm text-red-500 mt-1">{errors.sistemaAfetado}</p>}
+                    </div>
+
+                    {/* Descrição Geral do Serviço - Largura Total */}
+                    <div className="w-full md:col-span-2">
+                      <Label htmlFor="descricao" className="font-semibold">
+                        Descrição Geral do Serviço <span className="text-red-500">*</span>
+                      </Label>
+                      <Textarea
+                        id="descricao"
+                        placeholder="Descreva o serviço e o problema a ser resolvido..."
+                        value={formData.descricaoGeralServico}
+                        onChange={(e) => handleFormChange('descricaoGeralServico', e.target.value)}
+                        className={`w-full mt-2 rounded-xl ${errors.descricaoGeralServico ? 'border-red-500' : ''}`}
+                        rows={3}
+                      />
+                      {errors.descricaoGeralServico && <p className="text-sm text-red-500 mt-1">{errors.descricaoGeralServico}</p>}
+                    </div>
+                  </div>
+                )}
+
+                {equipeTab === 'terceirizada' && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
+                    {/* Tipo de Equipe */}
+                    <div className="w-full">
+                      <Label htmlFor="tipo-equipe-t" className="font-semibold">
+                        Tipo de Equipe <span className="text-red-500">*</span>
+                      </Label>
+                      <Select
+                        value={formData.tipoEquipe}
+                        onValueChange={(value) => handleFormChange('tipoEquipe', value)}
+                      >
+                        <SelectTrigger id="tipo-equipe-t" className={`w-full h-12 mt-2 rounded-xl ${errors.tipoEquipe ? 'border-red-500' : ''}`}>
+                          <SelectValue placeholder="Selecione..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {TIPOS_EQUIPE.map(tipo => (
+                            <SelectItem key={tipo} value={tipo}>{tipo}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {errors.tipoEquipe && <p className="text-sm text-red-500 mt-1">{errors.tipoEquipe}</p>}
+                    </div>
+
+                    {/* Empresa Terceira */}
+                    <div className="w-full">
+                      <Label htmlFor="empresa" className="font-semibold">
+                        Empresa Terceira <span className="text-red-500">*</span>
+                      </Label>
+                      <Input
+                        id="empresa"
+                        placeholder="Nome da empresa terceirizada"
+                        value={formData.empresaTerceira}
+                        onChange={(e) => handleFormChange('empresaTerceira', e.target.value)}
+                        className={`w-full h-12 mt-2 rounded-xl px-4 ${errors.empresaTerceira ? 'border-red-500' : ''}`}
+                      />
+                      {errors.empresaTerceira && <p className="text-sm text-red-500 mt-1">{errors.empresaTerceira}</p>}
+                    </div>
+
+                    {/* Tipo de Serviço */}
+                    <div className="w-full">
+                      <Label htmlFor="tipo-servico-t" className="font-semibold">
+                        Tipo de Serviço <span className="text-red-500">*</span>
+                      </Label>
+                      <Select
+                        value={formData.tipoServico}
+                        onValueChange={(value) => handleFormChange('tipoServico', value)}
+                      >
+                        <SelectTrigger id="tipo-servico-t" className={`w-full h-12 mt-2 rounded-xl ${errors.tipoServico ? 'border-red-500' : ''}`}>
+                          <SelectValue placeholder="Selecione..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {TIPOS_SERVICO.map(tipo => (
+                            <SelectItem key={tipo} value={tipo}>{tipo}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {errors.tipoServico && <p className="text-sm text-red-500 mt-1">{errors.tipoServico}</p>}
+                    </div>
+
+                    {/* Sistema Afetado */}
+                    <div className="w-full">
+                      <Label htmlFor="sistema-t" className="font-semibold">
+                        Sistema Afetado <span className="text-red-500">*</span>
+                      </Label>
+                      <Select
+                        value={formData.sistemaAfetado}
+                        onValueChange={(value) => handleFormChange('sistemaAfetado', value)}
+                      >
+                        <SelectTrigger id="sistema-t" className={`w-full h-12 mt-2 rounded-xl ${errors.sistemaAfetado ? 'border-red-500' : ''}`}>
+                          <SelectValue placeholder="Selecione..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {SISTEMAS_AFETADOS.map(sistema => (
+                            <SelectItem key={sistema} value={sistema}>{sistema}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {errors.sistemaAfetado && <p className="text-sm text-red-500 mt-1">{errors.sistemaAfetado}</p>}
+                    </div>
+
+                    {/* Descrição Geral do Serviço - Largura Total */}
+                    <div className="w-full md:col-span-2">
+                      <Label htmlFor="descricao-t" className="font-semibold">
+                        Descrição Geral do Serviço <span className="text-red-500">*</span>
+                      </Label>
+                      <Textarea
+                        id="descricao-t"
+                        placeholder="Descreva o serviço e o problema a ser resolvido..."
+                        value={formData.descricaoGeralServico}
+                        onChange={(e) => handleFormChange('descricaoGeralServico', e.target.value)}
+                        className={`w-full mt-2 rounded-xl ${errors.descricaoGeralServico ? 'border-red-500' : ''}`}
+                        rows={3}
+                      />
+                      {errors.descricaoGeralServico && <p className="text-sm text-red-500 mt-1">{errors.descricaoGeralServico}</p>}
+                    </div>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
