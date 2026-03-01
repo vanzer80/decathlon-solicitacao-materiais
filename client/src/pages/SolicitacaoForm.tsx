@@ -74,43 +74,44 @@ export default function SolicitacaoForm() {
   const [submitError, setSubmitError] = useState(false);
   const submitMutation = trpc.solicitacao.submit.useMutation();
 
-  // Carregar lojas do backend com cache
-  useEffect(() => {
-    const loadLojas = async () => {
-      try {
-        console.log('[Stores] Carregando lojas do backend...');
-        const response = await trpc.stores.list.query();
-        
-        if (response.ok && response.stores) {
-          const formattedLojas = response.stores.map((store) => ({
-            id: store.loja_id,
-            label: store.loja_label,
-          }));
-          console.log(`[Stores] ${formattedLojas.length} lojas carregadas`);
-          setLojas(formattedLojas);
-        } else {
-          console.error('[Stores] Erro ao carregar:', response.error);
-          toast.error(response.error || 'Falha ao carregar lojas');
-        }
-      } catch (error) {
-        console.error('[Stores] Erro na requisição:', error);
-        toast.error('Falha ao carregar lojas. Tente novamente.');
-      } finally {
-        setLojasLoaded(true);
-      }
-    };
-    loadLojas();
-  }, []);
+  // Carregar lojas do backend com cache usando tRPC useQuery
+  const storesQuery = trpc.stores.list.useQuery();
 
-  // Função para atualizar lista de lojas manualmente
+  useEffect(() => {
+    if (storesQuery.data) {
+      console.log('[Stores] Dados carregados:', storesQuery.data);
+      if (storesQuery.data.ok && storesQuery.data.stores) {
+        const formattedLojas = storesQuery.data.stores.map((store) => ({
+          id: store.loja_id,
+          label: store.loja_label,
+        }));
+        console.log(`[Stores] ${formattedLojas.length} lojas carregadas`);
+        setLojas(formattedLojas);
+      } else {
+        console.error('[Stores] Erro ao carregar:', storesQuery.data.error);
+        toast.error(storesQuery.data.error || 'Falha ao carregar lojas');
+      }
+      setLojasLoaded(true);
+    }
+
+    if (storesQuery.isError) {
+      console.error('[Stores] Erro na requisição:', storesQuery.error);
+      toast.error('Falha ao carregar lojas. Tente novamente.');
+      setLojasLoaded(true);
+    }
+  }, [storesQuery.data, storesQuery.isError, storesQuery.error]);
+
+  // Função para atualizar lista de lojas manualmente (refetch)
   const handleRefreshStores = async () => {
     try {
       console.log('[Stores] Atualizando lista de lojas...');
       setLojasLoaded(false);
-      const response = await trpc.stores.list.query();
       
-      if (response.ok && response.stores) {
-        const formattedLojas = response.stores.map((store) => ({
+      // Chamar refetch para forçar busca do Apps Script (ignora cache)
+      const result = await storesQuery.refetch();
+      
+      if (result.data && result.data.ok && result.data.stores) {
+        const formattedLojas = result.data.stores.map((store) => ({
           id: store.loja_id,
           label: store.loja_label,
         }));
@@ -118,11 +119,13 @@ export default function SolicitacaoForm() {
         setLojas(formattedLojas);
         toast.success(`${formattedLojas.length} lojas carregadas`);
       } else {
-        console.error('[Stores] Erro ao atualizar:', response.error);
-        toast.error(response.error || 'Falha ao atualizar lojas');
+        const errorMsg = result.data?.error || 'Falha ao atualizar lojas';
+        console.error('[Stores] Erro ao atualizar:', errorMsg);
+        toast.error(errorMsg);
       }
     } catch (error) {
-      console.error('[Stores] Erro ao atualizar:', error);
+      const errorMsg = error instanceof Error ? error.message : 'Erro desconhecido';
+      console.error('[Stores] Erro ao atualizar:', errorMsg, error);
       toast.error('Falha ao atualizar lojas. Tente novamente.');
     } finally {
       setLojasLoaded(true);
@@ -466,10 +469,10 @@ export default function SolicitacaoForm() {
                     variant="ghost"
                     size="sm"
                     onClick={handleRefreshStores}
-                    disabled={!lojasLoaded}
+                    disabled={!lojasLoaded || storesQuery.isFetching}
                     className="text-xs h-7 px-2 hover:bg-blue-50"
                   >
-                    🔄 Atualizar
+                    {storesQuery.isFetching ? '⏳ Atualizando...' : '🔄 Atualizar'}
                   </Button>
                 </div>
                 <div className="relative mt-1">
